@@ -21,7 +21,7 @@
   "expected": {
     "program_result": {
       "rejected": true,
-      "message": "Invalid input: expected number, received string"
+      "message": "getPullRequest: 'number' must be a positive integer"
     },
     "ledger": {
       "facade_calls": 1,

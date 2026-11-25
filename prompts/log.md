@@ -84,3 +84,15 @@ just remove the bit that says prompts are captured by hook, it is out of date
 ## 2026-11-25T16:15:06Z, session dfdda72e, HEAD 82c790c
 
 fix gate 001 then continue with work
+
+## 2026-11-25T16:26:26Z, session dfdda72e, HEAD 864a2f6
+
+1. A with generates strings:
+
+* `Plan refused: 26 writes, the limit is 25`
+* `Plan refused: a comment has 4001 characters, the limit is 4000`
+* `Plan refused: write kind 'merge_pull_request' is not allowed`
+* `getPullRequest: 'number' must be a positive integer`
+
+2. A, strictly more than 30 days
+3. A move out to mittens_holdout

@@ -7,7 +7,7 @@
  *   GOLD_DIR      the cases folder (default: gold/cases under the root)
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
@@ -40,7 +40,11 @@ function readNamedFiles(): Record<string, string> {
   const files: Record<string, string> = {};
 
   for (const relative of new Set(cases.flatMap(namedFiles))) {
-    files[relative] = readFileSync(path.join(root, relative), "utf8");
+    // A held-out case may name a file that lives only beside the held-out cases.
+    const inRepository = path.join(root, relative);
+    const source = existsSync(inRepository) ? inRepository : path.join(casesDir, relative);
+
+    files[relative] = readFileSync(source, "utf8");
   }
 
   return files;

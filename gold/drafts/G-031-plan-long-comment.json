@@ -23,7 +23,7 @@
     "now": "2026-11-01T00:00:00.000Z"
   },
   "expected": {
-    "refusal": "Too big: expected string to have <=4000 characters",
+    "refusal": "Plan refused: a comment has 4001 characters, the limit is 4000",
     "apply_outcome": null,
     "stub_writes": []
   }

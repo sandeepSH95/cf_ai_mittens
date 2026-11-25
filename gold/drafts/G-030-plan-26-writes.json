@@ -23,7 +23,7 @@
     "now": "2026-11-01T00:00:00.000Z"
   },
   "expected": {
-    "refusal": "Too big: expected array to have <=25 items",
+    "refusal": "Plan refused: 26 writes, the limit is 25",
     "apply_outcome": null,
     "stub_writes": []
   }
