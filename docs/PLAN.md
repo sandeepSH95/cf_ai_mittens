@@ -40,7 +40,7 @@ Non-goals, for this build:
 | criterion | one MUST or SHOULD statement with a stable ID, for example `SBX-003`, in `criteria/` |
 | gold case | one JSON file in `gold/cases/`: an input and the exact output the system must produce, naming the criteria it covers |
 | kind | exact (byte match after normalisation), adversarial (a malicious program and its exact outcome), contract (a public API shape), invariant (a predicate over live-model output; reports, never blocks) |
-| verifier | `verify/`, one runner that checks the manifest, checks coverage, runs every gold case inside workerd, and exits 0, 1, 3 or 4 |
+| verifier | `verify/`, one runner that checks the manifest, checks coverage, runs every gold case inside workerd, and exits 0, 1, 3, 4 or 5 (5: the verifier itself crashed) |
 | fence | the folders the builder cannot edit: `criteria/`, `gold/`, `verify/`, `loop/`; enforced by a PreToolUse hook and `gold/MANIFEST.sha256` |
 | pass | one headless agent session started by `loop/loop.sh`, followed by one verifier run and one ledger line |
 | run | a sequence of passes until exit 0, a cap, or an exit of 3 or 4 |
@@ -96,7 +96,7 @@ cf_ai_mittens/
 | Types for Workers | `npm run types` (runs `wrangler types` in each workspace) | `worker-configuration.d.ts` regenerated, gitignored |
 | Typecheck | `npm run typecheck` | exit 0 |
 | Unit tests inside workerd | `npm test` | vitest, all workspaces |
-| The verifier | `sh verify/run.sh` | exit 0, 1, 3 or 4; one line per case; summary line; `ledger/last-run.json` |
+| The verifier | `sh verify/run.sh` | exit 0, 1, 3, 4 or 5 (5 means the verifier crashed, not the build); one line per case; summary line; `ledger/last-run.json` |
 | Lint one gold case | `node verify/lint-case.js gold/drafts/G-004.json` | exit 0, or the first schema error |
 | Regenerate the manifest (human only) | `shasum -a 256 gold/cases/* verify/* loop/* > gold/MANIFEST.sha256` | file rewritten |
 | One loop run | `sh loop/loop.sh` | exits 0 (green), 1 (cap), 3 or 4 (human); ledger lines appended |
@@ -140,7 +140,7 @@ Read first: `docs/AGENTIC_LOOP_STRATEGY.md` section "The verifier and the iterat
 
 Do:
 
-1. `verify/exit-codes.ts`: constants `GREEN = 0`, `RED = 1`, `FENCE_BROKEN = 3`, `UNCOVERED = 4`.
+1. `verify/exit-codes.ts`: constants `GREEN = 0`, `RED = 1`, `FENCE_BROKEN = 3`, `UNCOVERED = 4`, `CRASH = 5` (the verifier itself failed; never read as a failing build).
 2. `verify/manifest.ts`: compare `gold/MANIFEST.sha256` to the files under `gold/cases/`, `verify/` and `loop/`; a missing manifest counts as broken.
 3. `verify/coverage.ts`: parse `criteria/*.md`, list every MUST ID, list every `covers` ID across `gold/cases/*.json`, report MUST IDs with no exact, adversarial or contract case.
 4. `verify/normalise.ts`: the rules in section 8, as pure functions with unit tests.
