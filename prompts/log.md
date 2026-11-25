@@ -80,3 +80,7 @@ I had to stop you there because of an external issue, pelase continue wher eyou 
 ## 2026-11-25T16:08:23Z, session dfdda72e, HEAD 3774d65
 
 just remove the bit that says prompts are captured by hook, it is out of date
+
+## 2026-11-25T16:15:06Z, session dfdda72e, HEAD 82c790c
+
+fix gate 001 then continue with work
