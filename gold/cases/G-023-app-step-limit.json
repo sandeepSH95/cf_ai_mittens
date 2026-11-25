@@ -1,0 +1,12 @@
+{
+  "id": "G-023",
+  "covers": [
+    "APP-004"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "app.stepLimit"
+  },
+  "expected": 6
+}

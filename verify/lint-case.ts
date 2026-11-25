@@ -18,8 +18,10 @@ const CASE_SUFFIX = ".json";
 const CASE_ID = /^G-[0-9]{3}$/;
 const CRITERION_ID = new RegExp(`^${ID_PATTERN}$`);
 
-// Example: "by hand, 2026-11-22". Only a human writes this line.
-const VERIFIED = /^by hand, [0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+// Example: "by hand, 2026-11-22" when the author checked every expected
+// value. "by agent, 2026-11-25" when an agent derived the values and the
+// author approved the set. The line never claims more than what happened.
+const VERIFIED = /^by (hand|agent), [0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 const TOP_KEYS = ["id", "covers", "kind", "verified", "input", "expected", "runs"];
 const APPROVALS = ["approve", "reject"];
@@ -180,7 +182,7 @@ function lintVerified(candidate: JsonObject, stage: Stage): ShapeError {
   }
 
   if (!isText(candidate.verified) || !VERIFIED.test(candidate.verified)) {
-    return "verified must look like 'by hand, 2026-11-22'";
+    return "verified must look like 'by hand, 2026-11-22' or 'by agent, 2026-11-22'";
   }
 
   return null;

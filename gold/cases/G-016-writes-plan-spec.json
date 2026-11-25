@@ -1,0 +1,12 @@
+{
+  "id": "G-016",
+  "covers": [
+    "GATE-006"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "gate.defineWrites.planSpec"
+  },
+  "expected": "type WriteOp =\n  | { kind: \"comment\"; number: number; body: string }\n  | { kind: \"close_pull_request\"; number: number }\n  | { kind: \"close_issue\"; number: number };\ntype WritePlan = { writes: WriteOp[] }; // at most 25 writes, comment body at most 4000 characters"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "G-010",
+  "covers": [
+    "ATK-003"
+  ],
+  "kind": "adversarial",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "program": "fixtures/programs/attack-env-inspection.js",
+    "options": {
+      "suite": "attackSandbox",
+      "executor": "sandbox"
+    }
+  },
+  "expected": {
+    "error": null,
+    "result": {
+      "breached": 0,
+      "breachedNames": []
+    }
+  }
+}

@@ -240,7 +240,7 @@ describe("case lint", () => {
       [{ covers: [] }, "covers must be a non-empty list"],
       [{ covers: ["sbx-1"] }, "covers entry 'sbx-1' is not a criterion ID"],
       [{ kind: "snapshot" }, "kind 'snapshot' is not known"],
-      [{ verified: "yes" }, "verified must look like 'by hand, 2026-11-22'"],
+      [{ verified: "yes" }, "verified must look like 'by hand, 2026-11-22' or 'by agent, 2026-11-22'"],
       [{ input: {} }, "input.call must be a non-empty string"],
       [{ extra: 1 }, "unknown key 'extra'"],
     ];

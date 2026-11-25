@@ -1,0 +1,17 @@
+{
+  "id": "G-026",
+  "covers": [
+    "HARN-001",
+    "HARN-002"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "harness.fenceByte"
+  },
+  "expected": {
+    "exit_code": 3,
+    "output_prefix": "fence broken: ",
+    "cases_run": 0
+  }
+}

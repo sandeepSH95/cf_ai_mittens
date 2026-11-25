@@ -1,0 +1,15 @@
+{
+  "id": "G-022",
+  "covers": [
+    "APP-004"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "app.toolNames"
+  },
+  "expected": [
+    "apply_writes",
+    "code"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "G-011",
+  "covers": [
+    "SBX-004"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "sandbox.createSandbox.keys"
+  },
+  "expected": [
+    "execute"
+  ]
+}

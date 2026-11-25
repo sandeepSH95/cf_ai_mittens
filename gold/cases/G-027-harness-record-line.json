@@ -1,0 +1,26 @@
+{
+  "id": "G-027",
+  "covers": [
+    "HARN-003"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "harness.recordLine",
+    "args": {
+      "pass": 0,
+      "exit_code": 1
+    }
+  },
+  "expected": {
+    "lines_appended": 1,
+    "keys": [
+      "commit",
+      "exit_code",
+      "failed",
+      "failing",
+      "pass",
+      "passed"
+    ]
+  }
+}

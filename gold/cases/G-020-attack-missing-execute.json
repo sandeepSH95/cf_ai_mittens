@@ -1,0 +1,18 @@
+{
+  "id": "G-020",
+  "covers": [
+    "ATK-001"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "attack.missingExecute",
+    "args": {
+      "canary": "CANARY_VALUE_0123456789"
+    }
+  },
+  "expected": {
+    "throws": "TypeError",
+    "message": "attackSandbox: execute must be a function"
+  }
+}

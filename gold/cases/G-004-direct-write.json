@@ -1,0 +1,15 @@
+{
+  "id": "G-004",
+  "covers": [
+    "GATE-001"
+  ],
+  "kind": "adversarial",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "program": "fixtures/programs/attack-direct-write.js"
+  },
+  "expected": {
+    "error": "The RPC receiver does not implement the method \"createComment\".",
+    "result": null
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "G-033",
+  "covers": [
+    "GATE-004"
+  ],
+  "kind": "exact",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-small.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/read-bad-input.js"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "program_result": {
+      "rejected": true,
+      "message": "getPullRequest: 'number' must be a positive integer"
+    },
+    "ledger": {
+      "facade_calls": 1,
+      "round_trips": 1,
+      "error": null,
+      "isolate_start_ms": {
+        "min": 0,
+        "max": 5000
+      }
+    },
+    "driver_calls": 0
+  }
+}

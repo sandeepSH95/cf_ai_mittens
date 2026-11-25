@@ -1,0 +1,12 @@
+{
+  "id": "G-017",
+  "covers": [
+    "GATE-006"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "gate.defineWrites.needsApproval"
+  },
+  "expected": true
+}

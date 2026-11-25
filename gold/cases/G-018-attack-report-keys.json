@@ -1,0 +1,15 @@
+{
+  "id": "G-018",
+  "covers": [
+    "ATK-001"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "attack.report.keys"
+  },
+  "expected": [
+    "breached",
+    "cases"
+  ]
+}

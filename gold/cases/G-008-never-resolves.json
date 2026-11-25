@@ -1,0 +1,19 @@
+{
+  "id": "G-008",
+  "covers": [
+    "SBX-003"
+  ],
+  "kind": "adversarial",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "program": "fixtures/programs/attack-never-resolves.js",
+    "options": {
+      "tickBudget": 10000,
+      "timeoutMs": 500
+    }
+  },
+  "expected": {
+    "error": "Program stopped: execution timed out",
+    "result": null
+  }
+}

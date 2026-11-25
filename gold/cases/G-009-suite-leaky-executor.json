@@ -1,0 +1,24 @@
+{
+  "id": "G-009",
+  "covers": [
+    "ATK-003"
+  ],
+  "kind": "adversarial",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "program": "fixtures/programs/attack-env-inspection.js",
+    "options": {
+      "suite": "attackSandbox",
+      "executor": "leaky-env"
+    }
+  },
+  "expected": {
+    "error": null,
+    "result": {
+      "breached": 1,
+      "breachedNames": [
+        "env inspection"
+      ]
+    }
+  }
+}

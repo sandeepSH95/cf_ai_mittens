@@ -1,0 +1,19 @@
+{
+  "id": "G-014",
+  "covers": [
+    "GATE-005"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "gate.defineReads.missingInput",
+    "args": {
+      "method": "getRepo",
+      "missing": "input"
+    }
+  },
+  "expected": {
+    "throws": "TypeError",
+    "message": "defineReads: 'getRepo' is missing 'input'"
+  }
+}

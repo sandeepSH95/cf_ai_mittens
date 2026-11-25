@@ -1,0 +1,21 @@
+{
+  "id": "G-024",
+  "covers": [
+    "APP-005"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-25",
+  "input": {
+    "call": "app.stateAfterStaleFlow",
+    "args": {
+      "fixtures": "fixtures/repo-small.json",
+      "program": "fixtures/programs/stale-prs.js",
+      "now": "2026-11-01T00:00:00.000Z"
+    }
+  },
+  "expected": {
+    "last_program_is_script_program": true,
+    "last_ledger_facade_calls": 6,
+    "runs": 1
+  }
+}
