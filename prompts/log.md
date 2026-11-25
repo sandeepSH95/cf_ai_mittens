@@ -76,3 +76,7 @@ ok let's do A, open the files that I need to look at
 I had to stop you there because of an external issue, pelase continue wher eyou stopped
 
 (Note by the agent: from this entry the session runs on model claude-fable-5-2; earlier entries ran on claude-fable-5-1.)
+
+## 2026-11-25T16:08:23Z, session dfdda72e, HEAD 3774d65
+
+just remove the bit that says prompts are captured by hook, it is out of date
