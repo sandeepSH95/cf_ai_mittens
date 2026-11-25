@@ -34,6 +34,7 @@ import { CaseStatus, runCasesInWorkerd } from "./runner/spawn.ts";
 import type { CaseResult, CaseRunner } from "./runner/spawn.ts";
 
 const CRITERIA_PATH = "criteria";
+const MAIN_CASES_PATH = "gold/cases";
 
 /** Runs the host-side checks and returns what the report needs. */
 export function verify(
@@ -70,7 +71,9 @@ export function verify(
   }
 
   // Step 3, coverage. A MUST without a case is a MUST the loop cannot enforce.
-  const uncovered = findUncovered(criteria, cases);
+  // Only the main set must cover every MUST: a held-out set is a sample that
+  // checks for overfitting, so it runs with whatever cases it holds.
+  const uncovered = isMainSet(root, casesDir) ? findUncovered(criteria, cases) : [];
 
   if (uncovered.length > 0) {
     console.log(`uncovered: ${uncovered.join(", ")}`);
@@ -100,6 +103,11 @@ function caseLine(result: CaseResult, cases: GoldCase[]): string {
   const line = `${result.id} ${result.status} ${covers.join(",")} (${result.durationMs} ms)`;
 
   return result.detail === "" ? line : `${line}\n${result.detail}`;
+}
+
+/** True when the cases come from gold/cases, false for a held-out folder. */
+function isMainSet(root: string, casesDir: string): boolean {
+  return path.resolve(casesDir) === path.resolve(root, MAIN_CASES_PATH);
 }
 
 function unknownErrors(criteria: Criterion[], cases: GoldCase[]): string[] {

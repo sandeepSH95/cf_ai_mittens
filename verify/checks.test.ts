@@ -403,10 +403,19 @@ describe("cases outside gold/cases", () => {
     assert.deepEqual(result.fence, ["elsewhere/MANIFEST.sha256 (missing)"]);
   });
 
-  test("signed folder passes the fence", () => {
+  test("signed folder runs its cases without the coverage check", () => {
     signFolder(heldOut);
+    const passing: CaseRunner = (_root, _casesDir, cases) =>
+      cases.map((goldCase) => ({ id: goldCase.id, status: CaseStatus.PASS, durationMs: 1, detail: "" }));
+    const result = verify(root, heldOut, passing);
 
-    assert.equal(verify(root, heldOut).exitCode, ExitCode.UNCOVERED);
+    // One case covers one of 15 MUST criteria. The main set would be exit 4.
+    assert.equal(result.exitCode, ExitCode.GREEN);
+    assert.equal(result.passed, 1);
+  });
+
+  test("the main set still needs every MUST covered", () => {
+    assert.equal(verify(root, path.join(root, "gold", "cases")).exitCode, ExitCode.UNCOVERED);
   });
 
   test("case changed after signing breaks the fence", () => {
