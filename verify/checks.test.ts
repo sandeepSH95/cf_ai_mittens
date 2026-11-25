@@ -30,7 +30,7 @@ import { FENCED_DIRS, MANIFEST_PATH, checkManifest } from "./manifest.ts";
 import type { Outcome } from "./report.ts";
 import { canonical, diffLines, normaliseExact, truncate, MAX_RESULT_CHARS } from "./normalise.ts";
 import { run, verify } from "./run.ts";
-import { NOT_BUILT } from "./runner/adapter.ts";
+import { contractLine, unknownCall } from "./runner/lines.ts";
 import { CaseStatus, runCasesInWorkerd } from "./runner/spawn.ts";
 import type { CaseRunner } from "./runner/spawn.ts";
 
@@ -561,21 +561,34 @@ describe("normalise", () => {
 });
 
 describe("case runner inside workerd", () => {
-  test("runs a signed case and reports the adapter's answer", () => {
+  const UNKNOWN_CALL = "verify.noSuchCall";
+
+  test("runs signed cases and reports the adapter's answer", () => {
     // The example case names a fixture and a program; give it both.
-    const goldCase = JSON.parse(readFileSync(EXAMPLE_CASE, "utf8")) as TestCase;
+    const exactCase = JSON.parse(readFileSync(EXAMPLE_CASE, "utf8")) as TestCase;
     const casesDir = path.join(root, "gold", "cases");
     mkdirSync(path.join(root, "fixtures", "programs"), { recursive: true });
     writeFileSync(path.join(root, "fixtures", "repo-small.json"), "{}");
     writeFileSync(path.join(root, "fixtures", "programs", "stale-prs.js"), "async () => null");
-    writeFileSync(path.join(casesDir, "G-012.json"), JSON.stringify(goldCase));
+    writeFileSync(path.join(casesDir, "G-012.json"), JSON.stringify(exactCase));
+
+    // A call no registry entry has: its answer does not depend on the packages.
+    const contractCase = { ...makeCase("G-013", ["SBX-001"]), input: { call: UNKNOWN_CALL } };
+    writeFileSync(path.join(casesDir, "G-013.json"), JSON.stringify(contractCase));
 
     const { cases } = loadCases(casesDir, Stage.SIGNED);
-    const [result] = runCasesInWorkerd(root, casesDir, cases);
+    const [exact, contract] = runCasesInWorkerd(root, casesDir, cases);
 
-    // Until the packages exist the adapter refuses every case, by name.
-    assert.equal(result?.id, "G-012");
-    assert.equal(result?.status, CaseStatus.FAIL);
-    assert.match(result?.detail ?? "", new RegExp(NOT_BUILT.slice(0, 40)));
+    // The whole path ran: Node read the case, workerd ran the adapter, and
+    // the report holds the adapter's one line and nothing else.
+    assert.equal(contract?.id, "G-013");
+    assert.equal(contract?.status, CaseStatus.FAIL);
+    assert.equal(contract?.detail, contractLine(unknownCall(UNKNOWN_CALL)));
+
+    // The example's fixture is empty, so the exact case cannot pass. What it
+    // reports depends on the packages; that it is reported does not.
+    assert.equal(exact?.id, "G-012");
+    assert.equal(exact?.status, CaseStatus.FAIL);
+    assert.notEqual(exact?.detail, "");
   });
 });
