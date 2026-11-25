@@ -1,0 +1,22 @@
+{
+  "id": "G-012",
+  "covers": ["GATE-002", "APP-003"],
+  "kind": "exact",
+  "verified": "by hand, 2026-11-22",
+  "input": {
+    "user_message": "Close my stale pull requests",
+    "fixtures": "fixtures/repo-small.json",
+    "model_script": [
+      { "tool": "code", "program": "fixtures/programs/stale-prs.js" },
+      { "tool": "apply_writes" },
+      { "text": "done" }
+    ],
+    "approval": "approve"
+  },
+  "expected": {
+    "program_result": { "summary": "5 of 7 open pull requests are stale." },
+    "plan": { "writes": [ { "kind": "comment", "number": 101 } ] },
+    "ledger": { "facade_calls": 6, "round_trips": 1, "error": null, "isolate_start_ms": { "min": 0, "max": 5000 } },
+    "apply_outcome": { "applied": 5, "failed": 0 }
+  }
+}

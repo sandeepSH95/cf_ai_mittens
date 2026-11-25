@@ -1,0 +1,8 @@
+# Subject: imperative, 50 characters, no period
+#
+# Body: what changed and why, wrapped at 72 columns.
+#
+# Prompt (session xxxxxxxx, 2026-11-23T10:14Z):
+# > the prompt, verbatim, or: by hand
+#
+# Verifier: exit 1 -> 0, cases 33/34 -> 34/34

@@ -1,0 +1,27 @@
+{
+  "name": "cf_ai_mittens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Mittens for AI agents: read anything, touch nothing, ask before you write.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "types": "npm run types --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "verify": "sh verify/run.sh",
+    "typecheck:verify": "tsc -p tsconfig.json",
+    "test:verify": "node --test verify/checks.test.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}
