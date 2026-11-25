@@ -1,0 +1,17 @@
+{
+  "id": "G-007",
+  "covers": [
+    "SBX-003"
+  ],
+  "kind": "adversarial",
+  "input": {
+    "program": "fixtures/programs/attack-recursion.js",
+    "options": {
+      "tickBudget": 10000
+    }
+  },
+  "expected": {
+    "error": "Program stopped: iteration budget exceeded (runaway loop or recursion)",
+    "result": null
+  }
+}

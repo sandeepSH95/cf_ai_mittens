@@ -1,0 +1,14 @@
+{
+  "id": "G-018",
+  "covers": [
+    "ATK-001"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "attack.report.keys"
+  },
+  "expected": [
+    "breached",
+    "cases"
+  ]
+}

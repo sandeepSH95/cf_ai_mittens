@@ -1,0 +1,11 @@
+{
+  "repo": {
+    "fullName": "mittens-fixtures/repo-empty",
+    "description": "Empty fixture: no pull requests and no issues",
+    "openIssues": 0,
+    "defaultBranch": "main"
+  },
+  "pullRequests": [],
+  "issues": [],
+  "comments": {}
+}

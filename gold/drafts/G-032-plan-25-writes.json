@@ -1,0 +1,419 @@
+{
+  "id": "G-032",
+  "covers": [
+    "GATE-003"
+  ],
+  "kind": "exact",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-paged.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/plan-25-writes.js"
+      },
+      {
+        "tool": "apply_writes"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "approval": "approve",
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "program_result": {
+      "summary": "25 comments planned.",
+      "plan": {
+        "writes": [
+          {
+            "kind": "comment",
+            "number": 1,
+            "body": "Planned comment 1 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 2,
+            "body": "Planned comment 2 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 3,
+            "body": "Planned comment 3 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 4,
+            "body": "Planned comment 4 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 5,
+            "body": "Planned comment 5 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 6,
+            "body": "Planned comment 6 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 7,
+            "body": "Planned comment 7 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 8,
+            "body": "Planned comment 8 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 9,
+            "body": "Planned comment 9 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 10,
+            "body": "Planned comment 10 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 11,
+            "body": "Planned comment 11 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 12,
+            "body": "Planned comment 12 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 13,
+            "body": "Planned comment 13 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 14,
+            "body": "Planned comment 14 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 15,
+            "body": "Planned comment 15 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 16,
+            "body": "Planned comment 16 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 17,
+            "body": "Planned comment 17 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 18,
+            "body": "Planned comment 18 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 19,
+            "body": "Planned comment 19 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 20,
+            "body": "Planned comment 20 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 21,
+            "body": "Planned comment 21 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 22,
+            "body": "Planned comment 22 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 23,
+            "body": "Planned comment 23 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 24,
+            "body": "Planned comment 24 of 25."
+          },
+          {
+            "kind": "comment",
+            "number": 25,
+            "body": "Planned comment 25 of 25."
+          }
+        ]
+      }
+    },
+    "plan": {
+      "writes": [
+        {
+          "kind": "comment",
+          "number": 1,
+          "body": "Planned comment 1 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 2,
+          "body": "Planned comment 2 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 3,
+          "body": "Planned comment 3 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 4,
+          "body": "Planned comment 4 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 5,
+          "body": "Planned comment 5 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 6,
+          "body": "Planned comment 6 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 7,
+          "body": "Planned comment 7 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 8,
+          "body": "Planned comment 8 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 9,
+          "body": "Planned comment 9 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 10,
+          "body": "Planned comment 10 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 11,
+          "body": "Planned comment 11 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 12,
+          "body": "Planned comment 12 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 13,
+          "body": "Planned comment 13 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 14,
+          "body": "Planned comment 14 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 15,
+          "body": "Planned comment 15 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 16,
+          "body": "Planned comment 16 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 17,
+          "body": "Planned comment 17 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 18,
+          "body": "Planned comment 18 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 19,
+          "body": "Planned comment 19 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 20,
+          "body": "Planned comment 20 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 21,
+          "body": "Planned comment 21 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 22,
+          "body": "Planned comment 22 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 23,
+          "body": "Planned comment 23 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 24,
+          "body": "Planned comment 24 of 25."
+        },
+        {
+          "kind": "comment",
+          "number": 25,
+          "body": "Planned comment 25 of 25."
+        }
+      ]
+    },
+    "apply_outcome": {
+      "applied": 25,
+      "failed": 0
+    },
+    "stub_writes": [
+      {
+        "kind": "comment",
+        "number": 1,
+        "body": "Planned comment 1 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 2,
+        "body": "Planned comment 2 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 3,
+        "body": "Planned comment 3 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 4,
+        "body": "Planned comment 4 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 5,
+        "body": "Planned comment 5 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 6,
+        "body": "Planned comment 6 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 7,
+        "body": "Planned comment 7 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 8,
+        "body": "Planned comment 8 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 9,
+        "body": "Planned comment 9 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 10,
+        "body": "Planned comment 10 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 11,
+        "body": "Planned comment 11 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 12,
+        "body": "Planned comment 12 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 13,
+        "body": "Planned comment 13 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 14,
+        "body": "Planned comment 14 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 15,
+        "body": "Planned comment 15 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 16,
+        "body": "Planned comment 16 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 17,
+        "body": "Planned comment 17 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 18,
+        "body": "Planned comment 18 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 19,
+        "body": "Planned comment 19 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 20,
+        "body": "Planned comment 20 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 21,
+        "body": "Planned comment 21 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 22,
+        "body": "Planned comment 22 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 23,
+        "body": "Planned comment 23 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 24,
+        "body": "Planned comment 24 of 25."
+      },
+      {
+        "kind": "comment",
+        "number": 25,
+        "body": "Planned comment 25 of 25."
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "G-030",
+  "covers": [
+    "GATE-003"
+  ],
+  "kind": "exact",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-paged.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/plan-26-writes.js"
+      },
+      {
+        "tool": "apply_writes"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "approval": "approve",
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "refusal": "Too big: expected array to have <=25 items",
+    "apply_outcome": null,
+    "stub_writes": []
+  }
+}

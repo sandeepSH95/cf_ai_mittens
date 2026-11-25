@@ -1,0 +1,32 @@
+{
+  "id": "G-025",
+  "covers": [
+    "HARN-001"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "harness.noCases"
+  },
+  "expected": {
+    "exit_code": 4,
+    "uncovered": [
+      "SBX-001",
+      "SBX-002",
+      "SBX-003",
+      "SBX-004",
+      "SBX-005",
+      "GATE-001",
+      "GATE-002",
+      "GATE-003",
+      "GATE-005",
+      "GATE-006",
+      "ATK-001",
+      "ATK-002",
+      "ATK-003",
+      "APP-001",
+      "APP-002",
+      "APP-003",
+      "APP-004"
+    ]
+  }
+}

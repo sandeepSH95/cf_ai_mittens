@@ -1,0 +1,19 @@
+{
+  "id": "G-003",
+  "covers": [
+    "SBX-002"
+  ],
+  "kind": "adversarial",
+  "input": {
+    "program": "fixtures/programs/attack-env-inspection.js"
+  },
+  "expected": {
+    "error": null,
+    "result": {
+      "envKeys": [
+        "GH"
+      ],
+      "tokenType": "undefined"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "G-031",
+  "covers": [
+    "GATE-003"
+  ],
+  "kind": "exact",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-small.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/plan-long-comment.js"
+      },
+      {
+        "tool": "apply_writes"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "approval": "approve",
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "refusal": "Too big: expected string to have <=4000 characters",
+    "apply_outcome": null,
+    "stub_writes": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "G-015",
+  "covers": [
+    "GATE-006"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "gate.defineWrites.keys"
+  },
+  "expected": [
+    "applyWritesTool",
+    "planSpec",
+    "validatePlan"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "G-017",
+  "covers": [
+    "GATE-006"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "gate.defineWrites.needsApproval"
+  },
+  "expected": true
+}

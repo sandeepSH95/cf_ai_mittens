@@ -1,0 +1,37 @@
+{
+  "id": "G-038",
+  "covers": [
+    "APP-001"
+  ],
+  "kind": "exact",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-paged.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/count-prs.js"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "program_result": {
+      "open": 101,
+      "lowest": 1,
+      "highest": 101
+    },
+    "ledger": {
+      "facade_calls": 1,
+      "round_trips": 1,
+      "error": null,
+      "isolate_start_ms": {
+        "min": 0,
+        "max": 5000
+      }
+    }
+  }
+}

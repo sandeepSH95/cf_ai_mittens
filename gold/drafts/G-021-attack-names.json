@@ -1,0 +1,20 @@
+{
+  "id": "G-021",
+  "covers": [
+    "ATK-002"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "attack.names"
+  },
+  "expected": [
+    "network fetch",
+    "swallowed fetch",
+    "env inspection",
+    "direct write call",
+    "synchronous loop",
+    "asynchronous loop",
+    "recursion",
+    "never-resolving promise"
+  ]
+}

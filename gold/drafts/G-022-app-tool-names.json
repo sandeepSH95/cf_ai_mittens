@@ -1,0 +1,14 @@
+{
+  "id": "G-022",
+  "covers": [
+    "APP-004"
+  ],
+  "kind": "contract",
+  "input": {
+    "call": "app.toolNames"
+  },
+  "expected": [
+    "apply_writes",
+    "code"
+  ]
+}
