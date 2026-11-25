@@ -1,0 +1,23 @@
+{
+  "name": "mittens_gate",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The hatch: the GitHub driver contract, the read-only facade, write plans and the approval tool.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "types": "wrangler types",
+    "pretypecheck": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cloudflare/codemode": "0.5.6",
+    "ai": "^7.0.0",
+    "mittens_sandbox": "*",
+    "zod": "^4.0.0"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "repo": {
+    "fullName": "octocat/hello-world",
+    "description": "Fixture repository for the Keyless Code Mode stub driver",
+    "openIssues": 10,
+    "defaultBranch": "main"
+  },
+  "pullRequests": [
+    { "number": 100, "title": "Bootstrap CI", "state": "closed", "author": "alice", "createdDaysAgo": 130, "updatedDaysAgo": 120, "draft": false, "labels": ["ci"], "body": "Initial CI pipeline." },
+    { "number": 101, "title": "Add retry to webhook client", "state": "open", "author": "alice", "createdDaysAgo": 95, "updatedDaysAgo": 90, "draft": false, "labels": ["enhancement"], "body": "Retries failed webhook deliveries three times." },
+    { "number": 102, "title": "Upgrade lodash to 4.17.22", "state": "open", "author": "dependabot", "createdDaysAgo": 80, "updatedDaysAgo": 78, "draft": false, "labels": ["dependencies"], "body": "Bumps lodash." },
+    { "number": 103, "title": "Experimental dark mode", "state": "open", "author": "bob", "createdDaysAgo": 70, "updatedDaysAgo": 61, "draft": true, "labels": ["ui", "experiment"], "body": "Do not merge yet." },
+    { "number": 104, "title": "Fix flaky integration test", "state": "open", "author": "carol", "createdDaysAgo": 55, "updatedDaysAgo": 52, "draft": false, "labels": ["tests"], "body": "Adds a wait for the queue to drain." },
+    { "number": 105, "title": "Document the release process", "state": "open", "author": "dave", "createdDaysAgo": 45, "updatedDaysAgo": 44, "draft": false, "labels": ["docs"], "body": "RELEASING.md" },
+    { "number": 106, "title": "Refactor config loader", "state": "open", "author": "alice", "createdDaysAgo": 40, "updatedDaysAgo": 33, "draft": false, "labels": [], "body": "Splits config parsing from validation." },
+    { "number": 107, "title": "Add rate limit headers", "state": "open", "author": "erin", "createdDaysAgo": 6, "updatedDaysAgo": 3, "draft": false, "labels": ["enhancement"], "body": "Exposes X-RateLimit-* headers." },
+    { "number": 108, "title": "WIP: streaming responses", "state": "open", "author": "bob", "createdDaysAgo": 14, "updatedDaysAgo": 12, "draft": true, "labels": ["experiment"], "body": "Streams the response body." }
+  ],
+  "issues": [
+    { "number": 201, "title": "Login page shows stale CSRF token", "state": "open", "author": "frank", "createdDaysAgo": 60, "updatedDaysAgo": 48, "labels": ["bug"], "body": "Repro steps inside." },
+    { "number": 202, "title": "Add dark mode toggle", "state": "open", "author": "grace", "createdDaysAgo": 9, "updatedDaysAgo": 2, "labels": ["enhancement"], "body": "Requested by three users." },
+    { "number": 203, "title": "Typo in README", "state": "closed", "author": "heidi", "createdDaysAgo": 200, "updatedDaysAgo": 199, "labels": ["docs"], "body": "Fixed in #100." }
+  ],
+  "comments": {
+    "101": [
+      { "id": 9001, "author": "bob", "body": "Looks good, but please add a test for the backoff.", "createdDaysAgo": 92 },
+      { "id": 9002, "author": "alice", "body": "Will do.", "createdDaysAgo": 90 }
+    ],
+    "102": [{ "id": 9003, "author": "carol", "body": "CI is red on this one.", "createdDaysAgo": 78 }],
+    "103": [],
+    "104": [
+      { "id": 9004, "author": "alice", "body": "Can you explain the wait?", "createdDaysAgo": 54 },
+      { "id": 9005, "author": "carol", "body": "The queue drains asynchronously.", "createdDaysAgo": 53 },
+      { "id": 9006, "author": "alice", "body": "Thanks.", "createdDaysAgo": 52 }
+    ],
+    "105": [{ "id": 9007, "author": "erin", "body": "Nice.", "createdDaysAgo": 44 }],
+    "106": [],
+    "107": [{ "id": 9008, "author": "alice", "body": "LGTM", "createdDaysAgo": 3 }],
+    "201": [{ "id": 9009, "author": "alice", "body": "Confirmed on staging.", "createdDaysAgo": 48 }]
+  }
+}

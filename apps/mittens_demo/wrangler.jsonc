@@ -1,0 +1,33 @@
+{
+  // Keyless Code Mode: a chat agent whose model writes one program per task.
+  // The program runs in a Dynamic Worker (env.LOADER) with no network and
+  // reaches GitHub only through the GitHubGate loopback entrypoint.
+  "name": "cf-ai-keyless-codemode",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Workers AI. `remote: true` lets `wrangler dev` call the real model when
+  // you are logged in. Use `wrangler dev --local` (npm run dev:offline) to
+  // stay offline with the stub drivers.
+  "ai": { "binding": "AI", "remote": true },
+
+  // Dynamic Workers. The only file that uses this binding is sandbox.ts in the package mittens_sandbox.
+  "worker_loaders": [{ "binding": "LOADER" }],
+
+  "durable_objects": { "bindings": [{ "name": "CoderAgent", "class_name": "CoderAgent" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CoderAgent"] }],
+
+  "observability": { "enabled": true, "traces": { "enabled": true } },
+
+  // The React UI built by `vite build`. Agent routes bypass the asset server.
+  "assets": { "directory": "./dist", "run_worker_first": ["/agents/*"] },
+
+  // Drivers default to the offline stubs. Override in .dev.vars or with
+  // `wrangler secret put` (GITHUB_TOKEN) and `vars` for production.
+  "vars": {
+    "GITHUB_DRIVER": "stub",
+    "MODEL_DRIVER": "stub",
+    "GITHUB_REPO": "octocat/hello-world"
+  }
+}

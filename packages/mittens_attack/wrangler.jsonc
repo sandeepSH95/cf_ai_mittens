@@ -1,0 +1,7 @@
+{
+  // Not a deployable Worker. This file exists so `wrangler types` can generate
+  // the workerd runtime types (WorkerLoader, Fetcher) that the typecheck needs.
+  "name": "mittens-attack",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"]
+}

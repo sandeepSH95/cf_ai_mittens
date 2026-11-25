@@ -1,0 +1,20 @@
+{
+  "name": "mittens_attack",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tries to pull the mittens off: a canary token, malicious programs and a helper that runs them against any executor.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./canary": "./src/canary.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "types": "wrangler types",
+    "pretypecheck": "wrangler types",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mittens_sandbox": "*"
+  }
+}
