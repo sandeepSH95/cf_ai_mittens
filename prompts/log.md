@@ -58,3 +58,21 @@ list next steps
 ## 2026-11-25T15:15:16Z, session dfdda72e, HEAD 69fecac
 
 ok let's port
+
+## 2026-11-25T15:24:47Z, session dfdda72e, HEAD 4986da3
+
+one thing I dont' understand babout hte ciretria files is, how are they deterministically run? is it a case of tryusting th ellm judge to adere to what the .md files tell them, or is actual code verification ebign run?
+
+## 2026-11-25T15:33:35Z, session dfdda72e, HEAD 4986da3
+
+ok nice, give me a table of all the next steps we need to take in order to build this system and which steps require a human in the loop. I want to be able to send you off to build and verify as much as you can as agents, and then only come back to me for clarification or get needed input before being set off again
+
+## 2026-11-25T15:36:52Z, session dfdda72e, HEAD 4986da3
+
+ok let's do A, open the files that I need to look at
+
+## 2026-11-25T16:01:36Z, session dfdda72e, HEAD 4986da3
+
+I had to stop you there because of an external issue, pelase continue wher eyou stopped
+
+(Note by the agent: from this entry the session runs on model claude-fable-5-2; earlier entries ran on claude-fable-5-1.)

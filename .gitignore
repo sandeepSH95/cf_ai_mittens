@@ -6,3 +6,4 @@ worker-configuration.d.ts
 ledger/pass-*.json
 .DS_Store
 ledger/last-run.json
+ledger/runner-report.json

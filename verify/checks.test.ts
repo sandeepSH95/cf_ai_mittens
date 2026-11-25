@@ -28,7 +28,11 @@ import { Stage, lintCase, loadCases } from "./lint-case.ts";
 import { FILE_PREFIX, Kind, ROOT, readCriteria } from "./lint-criteria.ts";
 import { FENCED_DIRS, MANIFEST_PATH, checkManifest } from "./manifest.ts";
 import type { Outcome } from "./report.ts";
+import { canonical, diffLines, normaliseExact, truncate, MAX_RESULT_CHARS } from "./normalise.ts";
 import { run, verify } from "./run.ts";
+import { NOT_BUILT } from "./runner/adapter.ts";
+import { CaseStatus, runCasesInWorkerd } from "./runner/spawn.ts";
+import type { CaseRunner } from "./runner/spawn.ts";
 
 const ROWS_PER_FILE = 3;
 const FIXTURE_MUST_COUNT = 15;
@@ -461,10 +465,108 @@ describe("run", () => {
     assert.deepEqual(result.goldSetErrors, ["G-001: covers SBX-099, not in criteria/"]);
   });
 
-  test("covered but no runner is red", () => {
+  /** A runner that gives every case the same status, without workerd. */
+  function runnerWith(status: CaseStatus): CaseRunner {
+    return (_root, _casesDir, cases) =>
+      cases.map((goldCase) => ({ id: goldCase.id, status, durationMs: 1, detail: "" }));
+  }
+
+  function outcomeWith(status: CaseStatus): Outcome {
+    return verify(root, path.join(root, "gold", "cases"), runnerWith(status));
+  }
+
+  test("a failing case is red and named", () => {
     coverAll();
     sign();
+    const result = outcomeWith(CaseStatus.FAIL);
 
-    assert.equal(outcome().exitCode, ExitCode.RED);
+    assert.equal(result.exitCode, ExitCode.RED);
+    assert.deepEqual(result.failing, ["G-001"]);
+  });
+
+  test("every case passing is green", () => {
+    coverAll();
+    sign();
+    const result = outcomeWith(CaseStatus.PASS);
+
+    assert.equal(result.exitCode, ExitCode.GREEN);
+    assert.equal(result.passed, 1);
+  });
+
+  test("a runner that throws is a verifier crash", () => {
+    coverAll();
+    sign();
+    const broken: CaseRunner = () => {
+      throw new Error("case runner wrote no report");
+    };
+
+    assert.equal(run(root, path.join(root, "gold", "cases"), broken).exitCode, ExitCode.VERIFIER_ERROR);
+  });
+});
+
+describe("normalise", () => {
+  const RANGE = { min: 0, max: 5000 };
+
+  test("a number inside the range matches the range", () => {
+    const { expected, actual } = normaliseExact(
+      { ledger: { isolate_start_ms: RANGE, facade_calls: 6 } },
+      { ledger: { facade_calls: 6, isolate_start_ms: 412 } },
+    );
+
+    assert.equal(canonical(expected), canonical(actual));
+  });
+
+  test("a number outside the range stays visible", () => {
+    const { expected, actual } = normaliseExact(
+      { ledger: { isolate_start_ms: RANGE } },
+      { ledger: { isolate_start_ms: 5001 } },
+    );
+
+    assert.notEqual(canonical(expected), canonical(actual));
+  });
+
+  test("timestamps and row ids become placeholders", () => {
+    const { actual } = normaliseExact(
+      { ledger: { id: 1, created_at: "a" } },
+      { ledger: { id: 7, created_at: "2026-11-25T00:00:00Z" } },
+    );
+
+    assert.deepEqual(actual, { ledger: { id: "<id>", created_at: "<ts>" } });
+  });
+
+  test("key order never matters, values do", () => {
+    assert.equal(canonical({ b: 1, a: [{ d: 1, c: 2 }] }), canonical({ a: [{ c: 2, d: 1 }], b: 1 }));
+    assert.notEqual(canonical({ a: "x " }), canonical({ a: "x" }));
+  });
+
+  test("long results are truncated like the ledger", () => {
+    assert.equal(truncate("x".repeat(MAX_RESULT_CHARS + 5)).length, MAX_RESULT_CHARS + 3);
+  });
+
+  test("diff marks both sides and is capped", () => {
+    assert.deepEqual(diffLines("a\nb\nc", "a\nx\nc"), ["  a", "- b", "+ x", "  c"]);
+
+    const long = diffLines("", Array.from({ length: 80 }, (_, i) => String(i)).join("\n"), 10);
+    assert.equal(long.length, 11);
+  });
+});
+
+describe("case runner inside workerd", () => {
+  test("runs a signed case and reports the adapter's answer", () => {
+    // The example case names a fixture and a program; give it both.
+    const goldCase = JSON.parse(readFileSync(EXAMPLE_CASE, "utf8")) as TestCase;
+    const casesDir = path.join(root, "gold", "cases");
+    mkdirSync(path.join(root, "fixtures", "programs"), { recursive: true });
+    writeFileSync(path.join(root, "fixtures", "repo-small.json"), "{}");
+    writeFileSync(path.join(root, "fixtures", "programs", "stale-prs.js"), "async () => null");
+    writeFileSync(path.join(casesDir, "G-012.json"), JSON.stringify(goldCase));
+
+    const { cases } = loadCases(casesDir, Stage.SIGNED);
+    const [result] = runCasesInWorkerd(root, casesDir, cases);
+
+    // Until the packages exist the adapter refuses every case, by name.
+    assert.equal(result?.id, "G-012");
+    assert.equal(result?.status, CaseStatus.FAIL);
+    assert.match(result?.detail ?? "", new RegExp(NOT_BUILT.slice(0, 40)));
   });
 });
