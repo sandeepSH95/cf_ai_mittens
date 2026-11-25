@@ -96,3 +96,7 @@ fix gate 001 then continue with work
 
 2. A, strictly more than 30 days
 3. A move out to mittens_holdout
+
+## 2026-11-25T16:30:01Z, session dfdda72e, HEAD 4cdb62b
+
+purge held-out form history and fix verification sheet by cleaning old library text
