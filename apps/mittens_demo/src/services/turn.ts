@@ -2,12 +2,14 @@
  * Composes one chat turn: model driver, sandbox executor (with ledger
  * recording) and the two tools. The agent calls only this.
  */
+import type { Executor } from "@cloudflare/codemode";
 import type { LanguageModel, ToolSet } from "ai";
-import { createAgentTools, EXAMPLE_PROGRAM, SYSTEM_PROMPT, ToolName } from "mittens_gate";
+import { createAgentTools, EXAMPLE_PROGRAM, MAX_STEPS, SYSTEM_PROMPT, ToolName, type GitHubReads, type GitHubWrites } from "mittens_gate";
 import { createModelDriver } from "../drivers/model";
 import { createRecordedExecutor } from "./executor";
+import { createReads } from "./facade";
 import { type Ledger, type LedgerRow } from "./ledger";
-import { createPlanApplier } from "./plan";
+import { createWrites } from "./plan";
 
 export type TurnOptions = {
   /** Loopback binding to GitHubGate, made by the agent with ctx.exports. */
@@ -17,7 +19,23 @@ export type TurnOptions = {
   onRecorded?: (row: LedgerRow) => void;
 };
 
-export type Turn = { model: LanguageModel; modelId: string; tools: ToolSet; system: string };
+export type Turn = { model: LanguageModel; modelId: string; tools: ToolSet; system: string; stepLimit: number };
+
+/** What the agent holds of the gate: the reads, the writes, the tools made of them and the step limit. */
+export type GateParts = { reads: GitHubReads; writes: GitHubWrites; tools: ToolSet; stepLimit: number };
+
+/**
+ * Builds the reads with defineReads, the writes with defineWrites, and the
+ * two tools from them. prepareTurn uses it, and so does the testing entry,
+ * so both see the same values.
+ */
+export function createGateParts(env: Env, executor: Executor): GateParts {
+  const reads = createReads(env);
+  const writes = createWrites(env);
+  const tools = createAgentTools({ executor, reads, writes });
+
+  return { reads, writes, tools, stepLimit: MAX_STEPS };
+}
 
 export function prepareTurn(env: Env, options: TurnOptions): Turn {
   const executor = createRecordedExecutor(env, {
@@ -34,7 +52,7 @@ export function prepareTurn(env: Env, options: TurnOptions): Turn {
     program: EXAMPLE_PROGRAM
   });
 
-  const tools = createAgentTools({ executor, applyPlan: createPlanApplier(env) });
+  const parts = createGateParts(env, executor);
 
-  return { model: driver.model(), modelId: driver.modelId, tools, system: SYSTEM_PROMPT };
+  return { model: driver.model(), modelId: driver.modelId, tools: parts.tools, system: SYSTEM_PROMPT, stepLimit: parts.stepLimit };
 }

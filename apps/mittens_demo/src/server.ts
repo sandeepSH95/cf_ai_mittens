@@ -25,7 +25,6 @@ import { routeAgentRequest } from "agents";
 import { wrapAISDK } from "agents/observability/ai";
 import * as ai from "ai";
 import { convertToModelMessages, stepCountIs, type StepResult, type ToolSet } from "ai";
-import { MAX_STEPS } from "mittens_gate";
 import { Ledger, type LedgerRow } from "./services/ledger";
 import { prepareTurn } from "./services/turn";
 
@@ -71,7 +70,7 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
       system: turn.system,
       messages: await convertToModelMessages(this.messages, { tools: turn.tools }),
       tools: turn.tools,
-      stopWhen: stepCountIs(MAX_STEPS),
+      stopWhen: stepCountIs(turn.stepLimit),
       abortSignal: options?.abortSignal,
       onStepFinish: (step) => this.#attachUsage(ledger, recorded.splice(0), step)
     });

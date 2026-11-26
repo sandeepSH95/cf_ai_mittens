@@ -6,10 +6,11 @@
  * us its DurableObjectState). The agent instance itself is not used.
  */
 import { env, runInDurableObject } from "cloudflare:test";
-import { createAgentTools, ToolName } from "mittens_gate";
+import { ToolName } from "mittens_gate";
 import type { CoderAgent } from "../src/server";
 import { createRecordedExecutor } from "../src/services/executor";
 import { Ledger, type LedgerRow, type ProgramRun } from "../src/services/ledger";
+import { createGateParts } from "../src/services/turn";
 
 export const TEST_RUN_ID = "test-run";
 const SANDBOX_AGENT = "sandbox-tests";
@@ -44,7 +45,7 @@ export function runThroughCodeTool(code: string): Promise<unknown> {
   return inAgent(async (state) => {
     const gate = state.exports.GitHubGate({ props: { runId: TEST_RUN_ID } });
     const executor = createRecordedExecutor(env, { gate });
-    const tools = createAgentTools({ executor, applyPlan: async () => ({ applied: [], failed: [] }) });
+    const { tools } = createGateParts(env, executor);
     const codeTool = tools[ToolName.Code];
 
     if (codeTool.execute === undefined) {

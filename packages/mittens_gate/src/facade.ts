@@ -5,7 +5,7 @@
  *                                      |  Workers RPC over the loopback binding GH
  *   host, demo gate.ts     GitHubGate.listPullRequests(input)
  *                                      |
- *   host, this file        Facade.listPullRequests(input)               parses input (FACADE_SCHEMAS)
+ *   host, this file        facade.listPullRequests(input)               defineReads parses input (FACADE_SCHEMAS)
  *                                      |
  *   host, drivers          GitHubDriver.listPullRequests(repo, state)   api.github.com or fixtures
  *
@@ -15,7 +15,8 @@
 import type { ToolDescriptors } from "@cloudflare/codemode/ai";
 import { z } from "zod";
 import { SANDBOX_NAMESPACE } from "mittens_sandbox";
-import { IssueState, type Comment, type GitHubDriver, type Issue, type PullRequest, type Repo, type RepoRef } from "./github-types";
+import { IssueState, type GitHubDriver, type RepoRef } from "./github-types";
+import { defineReads } from "./reads";
 
 export const FacadeMethod = {
   ListPullRequests: "listPullRequests",
@@ -29,8 +30,12 @@ export type FacadeMethod = (typeof FacadeMethod)[keyof typeof FacadeMethod];
 /** Method names exposed as `github.<name>` inside the isolate. */
 export const FACADE_METHODS: readonly FacadeMethod[] = Object.values(FacadeMethod);
 
-const stateSchema = z.enum([IssueState.Open, IssueState.Closed, IssueState.All] as const).default(IssueState.Open);
-const itemNumberSchema = z.number().int().positive();
+// The messages are read by generated code. Example: "getPullRequest: 'number' must be a positive integer".
+const STATE_MESSAGE = `must be "${IssueState.Open}", "${IssueState.Closed}" or "${IssueState.All}"`;
+const ITEM_NUMBER_MESSAGE = "must be a positive integer";
+
+const stateSchema = z.enum([IssueState.Open, IssueState.Closed, IssueState.All] as const, { error: STATE_MESSAGE }).default(IssueState.Open);
+const itemNumberSchema = z.custom<number>((value) => Number.isInteger(value) && (value as number) > 0, { error: ITEM_NUMBER_MESSAGE });
 
 /** Input schemas. Generated code sends untrusted JSON, so every call is parsed first. */
 export const FACADE_SCHEMAS = {
@@ -49,41 +54,59 @@ const DESCRIPTIONS: Record<FacadeMethod, string> = {
   [FacadeMethod.GetRepo]: "Get the repository summary."
 };
 
-/** Host-side implementation. Every method parses its input before touching the driver; bad input rejects. */
-export class Facade {
-  readonly #driver: GitHubDriver;
-  readonly #repo: RepoRef;
+/** The type aliases the declarations of githubReads use. Keep them in step with github-types.ts. */
+const FACADE_TYPES = `type ItemState = "open" | "closed";
+type StateFilter = { state?: "open" | "closed" | "all" }; // default "open"
+type PullRequest = { number: number; title: string; state: ItemState; author: string; createdAt: string; updatedAt: string; draft: boolean; url: string; labels: string[]; body: string | null };
+type Issue = { number: number; title: string; state: ItemState; author: string; createdAt: string; updatedAt: string; url: string; labels: string[]; body: string | null };
+type Comment = { id: number; author: string; body: string; createdAt: string };
+type Repo = { fullName: string; description: string | null; openIssues: number; defaultBranch: string };`;
 
-  constructor(driver: GitHubDriver, repo: RepoRef) {
-    this.#driver = driver;
-    this.#repo = repo;
-  }
+const FACADE_ABOUT = "Read-only. The repository is fixed by the host; you cannot pick another one. Dates are ISO 8601 strings.";
 
-  async listPullRequests(input?: unknown): Promise<PullRequest[]> {
-    const { state } = FACADE_SCHEMAS.listPullRequests.parse(input ?? {});
-    return this.#driver.listPullRequests(this.#repo, state);
-  }
+const STATE_FILTER_PARAMETER = "input?: StateFilter";
+const ITEM_NUMBER_PARAMETER = "input: { number: number }";
 
-  async getPullRequest(input?: unknown): Promise<PullRequest> {
-    const { number } = FACADE_SCHEMAS.getPullRequest.parse(input ?? {});
-    return this.#driver.getPullRequest(this.#repo, number);
-  }
-
-  async listIssues(input?: unknown): Promise<Issue[]> {
-    const { state } = FACADE_SCHEMAS.listIssues.parse(input ?? {});
-    return this.#driver.listIssues(this.#repo, state);
-  }
-
-  async listComments(input?: unknown): Promise<Comment[]> {
-    const { number } = FACADE_SCHEMAS.listComments.parse(input ?? {});
-    return this.#driver.listComments(this.#repo, number);
-  }
-
-  async getRepo(input?: unknown): Promise<Repo> {
-    FACADE_SCHEMAS.getRepo.parse(input ?? {});
-    return this.#driver.getRepo(this.#repo);
-  }
+/**
+ * The GitHub reads over one driver and one repository. Every method parses
+ * its input before the driver runs; bad input rejects.
+ * Example: githubReads(driver, repo).facade.listPullRequests({ state: "open" }).
+ */
+export function githubReads(driver: GitHubDriver, repo: RepoRef) {
+  return defineReads(
+    {
+      [FacadeMethod.ListPullRequests]: {
+        input: { schema: FACADE_SCHEMAS.listPullRequests, declaration: STATE_FILTER_PARAMETER },
+        output: { declaration: "PullRequest[]" },
+        handler: ({ state }: { state: IssueState }) => driver.listPullRequests(repo, state)
+      },
+      [FacadeMethod.GetPullRequest]: {
+        input: { schema: FACADE_SCHEMAS.getPullRequest, declaration: ITEM_NUMBER_PARAMETER },
+        output: { declaration: "PullRequest" },
+        handler: ({ number }: { number: number }) => driver.getPullRequest(repo, number)
+      },
+      [FacadeMethod.ListIssues]: {
+        input: { schema: FACADE_SCHEMAS.listIssues, declaration: STATE_FILTER_PARAMETER },
+        output: { declaration: "Issue[]" },
+        handler: ({ state }: { state: IssueState }) => driver.listIssues(repo, state)
+      },
+      [FacadeMethod.ListComments]: {
+        input: { schema: FACADE_SCHEMAS.listComments, declaration: ITEM_NUMBER_PARAMETER },
+        output: { declaration: "Comment[]" },
+        handler: ({ number }: { number: number }) => driver.listComments(repo, number)
+      },
+      [FacadeMethod.GetRepo]: {
+        input: { schema: FACADE_SCHEMAS.getRepo, declaration: null },
+        output: { declaration: "Repo" },
+        handler: () => driver.getRepo(repo)
+      }
+    },
+    { namespace: SANDBOX_NAMESPACE, types: FACADE_TYPES, about: FACADE_ABOUT }
+  );
 }
+
+export type GitHubReads = ReturnType<typeof githubReads>;
+export type Facade = GitHubReads["facade"];
 
 /** Tool descriptors for createCodeTool. They carry schemas, not execute functions: calls go over RPC. */
 export function facadeDescriptors(): ToolDescriptors {
@@ -94,28 +117,6 @@ export function facadeDescriptors(): ToolDescriptors {
   }
 
   return descriptors;
-}
-
-/** The TypeScript the model reads. Keep it in step with FACADE_SCHEMAS and github-types.ts. */
-const FACADE_TYPES = `type ItemState = "open" | "closed";
-type StateFilter = { state?: "open" | "closed" | "all" }; // default "open"
-type PullRequest = { number: number; title: string; state: ItemState; author: string; createdAt: string; updatedAt: string; draft: boolean; url: string; labels: string[]; body: string | null };
-type Issue = { number: number; title: string; state: ItemState; author: string; createdAt: string; updatedAt: string; url: string; labels: string[]; body: string | null };
-type Comment = { id: number; author: string; body: string; createdAt: string };
-type Repo = { fullName: string; description: string | null; openIssues: number; defaultBranch: string };
-
-/** Read-only. The repository is fixed by the host; you cannot pick another one. Dates are ISO 8601 strings. */
-declare const ${SANDBOX_NAMESPACE}: {
-  ${FacadeMethod.ListPullRequests}(input?: StateFilter): Promise<PullRequest[]>;
-  ${FacadeMethod.GetPullRequest}(input: { number: number }): Promise<PullRequest>;
-  ${FacadeMethod.ListIssues}(input?: StateFilter): Promise<Issue[]>;
-  ${FacadeMethod.ListComments}(input: { number: number }): Promise<Comment[]>;
-  ${FacadeMethod.GetRepo}(): Promise<Repo>;
-};`;
-
-/** Describes the facade to the model. */
-export function spec(): string {
-  return FACADE_TYPES;
 }
 
 /**

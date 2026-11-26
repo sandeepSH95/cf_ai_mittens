@@ -2,7 +2,7 @@
  * Covers KCM-006 (GitHub driver behind an interface with a fixture stub) and the
  * typed facade the model is told about, including the fixed example program.
  */
-import { EXAMPLE_PROGRAM, Facade } from "mittens_gate";
+import { EXAMPLE_PROGRAM, githubReads, type Facade } from "mittens_gate";
 import { describe, expect, it } from "vitest";
 import { createGitHubDriver, GitHubDriverKind, IssueState, parseRepoRef } from "../src/drivers/github";
 import { StubGitHubDriver } from "../src/drivers/github-stub";
@@ -21,7 +21,7 @@ const STALE_NON_DRAFT_PULLS = [101, 102, 104, 105, 106];
 const EXAMPLE_FACADE_CALLS = 1 + STALE_NON_DRAFT_PULLS.length;
 
 function facade(): Facade {
-  return new Facade(new StubGitHubDriver(), REPO);
+  return githubReads(new StubGitHubDriver(), REPO).facade;
 }
 
 describe("KCM-006 driver selection", () => {

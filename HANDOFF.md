@@ -1,36 +1,37 @@
 # HANDOFF
 
-Pass of 2026-11-26. Verifier: exit 1 -> 1, cases 3/39 -> 19/39 (G-039 skipped).
+Pass of 2026-11-26 (second). Verifier: exit 1 -> 1, cases 19/39 -> 26/39 (G-039 skipped).
 
 ## What changed
 
-- `mittens_sandbox`: `createSandbox({ loader, gate, tickBudget?, timeoutMs?, cpuMs? })` returns `{ execute }` only. It throws a `TypeError` on an unknown key, a missing loader or gate, or a non-positive limit. `execute` resolves to exactly `{ result, error, facadeCalls, isolateStartMs }`; `result` is null on an error.
-- The `methods` option is gone. Inside the isolate, `github` is a proxy that forwards every method name to `env.GH`. The gate alone decides which methods exist.
-- `mittens_attack`: `attackSandbox({ execute, canary })` returns `{ cases, breached }` with the eight names of ATK-002. A case is breached when the canary is in any string the executor reports or throws.
-- `mittens_demo`: new `src/testing.ts` with `openGate(source?)`. New `services/executor.ts` wraps the sandbox for the `code` tool and reports each run to the ledger. The stub driver takes an optional fixture text and clock through the gate props.
+- `mittens_gate/src/reads.ts`: `defineReads(map, options?)` returns `{ facade, spec }`. Each entry is `{ input: { schema, declaration }, output: { declaration }, handler }`. The key check of all entries runs first, then the value checks. `facade.<method>(raw)` parses on the host, then calls the handler. A bad input rejects with `<method>: '<field>' <message>`.
+- `mittens_gate/src/writes.ts`: `defineWrites(kinds, limits)` returns `{ planSpec, validatePlan, applyWritesTool }`. `validatePlan` throws a `PlanRefusal` ("Plan refused: ..."). The tool has `needsApproval: true` and calls `validatePlan` in `execute`, before any write.
+- `facade.ts` and `plan.ts` now only name the GitHub reads and writes: `githubReads(driver, repo)`, `githubWrites(driver, repo)`. The `Facade` class, `spec()`, `PLAN_SPEC`, `applyPlan` and the zod plan schemas are gone.
+- `createAgentTools({ executor, reads, writes })` takes the two results. The apply tool is `writes.applyWritesTool`.
+- Demo: `services/turn.ts` has `createGateParts(env, executor)`. `prepareTurn` and `agentParts()` both call it. The agent reads its step limit from the turn.
 
 ## Fixed
 
-G-001 to G-012, G-018 to G-021.
+G-013 to G-017, G-022, G-023.
 
-## Still fails (19)
+## Still fails (12)
 
-- G-013, G-014: `mittens_gate` has no `defineReads`.
-- G-015, G-016, G-017: `mittens_gate` has no `defineWrites`.
-- G-022, G-023: `mittens_demo/testing` has no `agentParts()`.
-- G-024, G-028 to G-038: `mittens_demo/testing` has no `runScriptedCase(input)`.
+G-024, G-028 to G-038: `mittens_demo/testing` has no `runScriptedCase(input)`.
 
 ## Suggested order for the next pass
 
-1. `defineReads` and `defineWrites` in `mittens_gate`, from the existing `facade.ts` and `plan.ts`. Read the exact declaration strings in G-013 and G-016 first.
-2. `agentParts()`: needs the agent to build its reads and writes through those two functions.
-3. `runScriptedCase`: needs a scripted model driver, a stub that counts read calls and records writes, and the approval answer.
+1. A scripted model driver from `input.script` (`scriptedModel` in `drivers/model.ts` exists). The `apply_writes` step takes the plan of the last program result.
+2. A stub that counts read calls and records writes, shared between the gate (reads) and the apply tool (writes). Today each call of `createGitHubDriver` makes a new stub, and `createWrites(env)` takes no fixture source.
+3. Drive the real `CoderAgent` by name, answer the approval, then build the report.
 
 ## Suspicions and notes
 
-- The sandbox no longer returns logs (the contract names four keys). The `code` tool now gives the model an empty log list. Console output of a program is lost.
-- The limits are still raised to a floor (timeout 500 ms, ticks 1000, cpu 10 ms). A held-out case with a smaller positive value gets the floor, not an error.
-- The attack suite judges by the canary only. A fetch that succeeds with no canary in the answer is reported as held. ATK-003 asks for no more, but it is a weak suite.
-- `openGate(source)` is covered by one demo test only, not by a gold case yet.
-- The fence hook refused two shell commands of mine by mistake. Both wrote only under `apps/`, but their text held the words of a fenced path (a fixture file name in a comment, and the word "loop" in a test name). Nothing ran, no fenced file changed (the verifier did not exit 3). The hook matches words in a shell command, so write such files with the file tools.
-- `npm test` prints "uncaught exception ... does not implement createComment". It is the rejected write of the direct write attack, and the tests pass.
+- `refusal`: the plan is validated in `execute`, so the human approves first and the refusal comes back as a tool error. Texts are ready: "Plan refused: 26 writes, the limit is 25" and "Plan refused: a comment has 4001 characters, the limit is 4000". The report must take the message from the agent path (the tool error part), not compute it.
+- The tool's input schema is `{ plan: unknown }`. The model sees the plan shape only in the description of the `code` tool. A stricter schema makes the SDK refuse a bad plan with its own text, before `validatePlan`.
+- An empty plan (`writes: []`) is now valid and applies nothing. The old schema refused it. GATE-003 does not list it.
+- The comment limit applies to any write with a string `body`, not only to the kind `comment`.
+- `defineWrites` takes `limits` as a second argument. The contract does not fix this and the adapter never calls it.
+- The read validation message crosses RPC unchanged in the test runtime (demo test `agent-parts.test.ts`). Not checked in production.
+- Still open from the last pass: no sandbox logs, the limit floors, the weak attack judgement.
+- The fence hook refuses a shell command that names a fenced path, also for a read. Use the file tools to read cases and criteria.
+- `npm test` prints "uncaught exception" for the rejected direct write and for the bad read input. Both are expected, the tests pass.

@@ -7,7 +7,7 @@
  */
 import type { Executor } from "@cloudflare/codemode";
 import { stepCountIs, streamText, type ModelMessage } from "ai";
-import { applyPlan, createAgentTools, MAX_STEPS, ToolName, type ApplyOutcome, type WritePlan } from "mittens_gate";
+import { createAgentTools, githubReads, githubWrites, MAX_STEPS, ToolName, type ApplyOutcome, type WritePlan } from "mittens_gate";
 import { describe, expect, it } from "vitest";
 import { parseRepoRef, WriteKind } from "../src/drivers/github";
 import { StubGitHubDriver } from "../src/drivers/github-stub";
@@ -29,7 +29,7 @@ const NO_EXECUTOR: Executor = { execute: async () => ({ result: undefined, error
 
 function setup() {
   const driver = new StubGitHubDriver();
-  const tools = createAgentTools({ executor: NO_EXECUTOR, applyPlan: (plan) => applyPlan(driver, REPO, plan) });
+  const tools = createAgentTools({ executor: NO_EXECUTOR, reads: githubReads(driver, REPO), writes: githubWrites(driver, REPO) });
   return { driver, tools };
 }
 
