@@ -14,8 +14,11 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import type { Facade } from "mittens_gate";
 import { createReads, type FacadeSource } from "./services/facade";
 
-/** `source` is set by the testing entry only: the reads then come from that fixture. */
-export type GateProps = { runId: string; source?: FacadeSource };
+/**
+ * `source` is set by the testing entry only: the reads then come from that fixture.
+ * `scope` is the name of the agent that made the handle (services/seam.ts).
+ */
+export type GateProps = { runId: string; source?: FacadeSource; scope?: string };
 
 export class GitHubGate extends WorkerEntrypoint<Env, GateProps> {
   listPullRequests(input?: unknown) {
@@ -39,6 +42,6 @@ export class GitHubGate extends WorkerEntrypoint<Env, GateProps> {
   }
 
   #facade(): Facade {
-    return createReads(this.env, this.ctx.props.source).facade;
+    return createReads(this.env, this.ctx.props).facade;
   }
 }

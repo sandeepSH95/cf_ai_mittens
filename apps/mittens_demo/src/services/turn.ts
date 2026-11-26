@@ -5,11 +5,11 @@
 import type { Executor } from "@cloudflare/codemode";
 import type { LanguageModel, ToolSet } from "ai";
 import { createAgentTools, EXAMPLE_PROGRAM, MAX_STEPS, SYSTEM_PROMPT, ToolName, type GitHubReads, type GitHubWrites } from "mittens_gate";
-import { createModelDriver } from "../drivers/model";
 import { createRecordedExecutor } from "./executor";
 import { createReads } from "./facade";
 import { type Ledger, type LedgerRow } from "./ledger";
 import { createWrites } from "./plan";
+import { modelDriverFor } from "./seam";
 
 export type TurnOptions = {
   /** Loopback binding to GitHubGate, made by the agent with ctx.exports. */
@@ -17,6 +17,8 @@ export type TurnOptions = {
   ledger: Ledger;
   /** Called after each program run was written to the ledger. */
   onRecorded?: (row: LedgerRow) => void;
+  /** The name of the agent instance. A test replaces the drivers of one agent by it (services/seam.ts). */
+  scope?: string;
 };
 
 export type Turn = { model: LanguageModel; modelId: string; tools: ToolSet; system: string; stepLimit: number };
@@ -29,9 +31,9 @@ export type GateParts = { reads: GitHubReads; writes: GitHubWrites; tools: ToolS
  * two tools from them. prepareTurn uses it, and so does the testing entry,
  * so both see the same values.
  */
-export function createGateParts(env: Env, executor: Executor): GateParts {
-  const reads = createReads(env);
-  const writes = createWrites(env);
+export function createGateParts(env: Env, executor: Executor, scope?: string): GateParts {
+  const reads = createReads(env, { scope });
+  const writes = createWrites(env, scope);
   const tools = createAgentTools({ executor, reads, writes });
 
   return { reads, writes, tools, stepLimit: MAX_STEPS };
@@ -46,13 +48,10 @@ export function prepareTurn(env: Env, options: TurnOptions): Turn {
     }
   });
 
-  const driver = createModelDriver(env, {
-    codeTool: ToolName.Code,
-    applyTool: ToolName.ApplyWrites,
-    program: EXAMPLE_PROGRAM
-  });
+  const script = { codeTool: ToolName.Code, applyTool: ToolName.ApplyWrites, program: EXAMPLE_PROGRAM };
+  const driver = modelDriverFor(env, script, options.scope);
 
-  const parts = createGateParts(env, executor);
+  const parts = createGateParts(env, executor, options.scope);
 
   return { model: driver.model(), modelId: driver.modelId, tools: parts.tools, system: SYSTEM_PROMPT, stepLimit: parts.stepLimit };
 }

@@ -4,6 +4,8 @@
  * Dates in the fixture are stored as "days ago" so the data stays stable:
  * pull request 101 is always 90 days old, whatever today is.
  * Writes are recorded in memory so tests can assert what was applied.
+ * Read calls are counted, so a test can prove that a refused read never
+ * reached the driver.
  */
 import defaultFixture from "../fixtures/github.json";
 import {
@@ -42,7 +44,10 @@ type Fixture = typeof defaultFixture;
  * Replaces the built-in fixture and the clock. For tests and the verifier.
  * Example: { fixture: "<JSON text in the shape of github.json>", now: "2026-11-01T00:00:00Z" }.
  */
-export type StubSource = { fixture: string; now: string };
+export type StubSource = { fixture: string; now: string | null };
+
+/** One write as the stub received it, in the shape of a plan write. Example: { kind: "comment", number: 101, body: "Stale." }. */
+export type StubWrite = { kind: WriteKind; number: number; body?: string };
 
 function daysAgo(now: number, days: number): string {
   return new Date(now - days * DAY_MS).toISOString();
@@ -55,10 +60,13 @@ export class StubGitHubDriver implements GitHubDriver {
   readonly #comments: Map<number, Comment[]>;
   readonly #repo: Repo;
   readonly #writes: WriteReceipt[] = [];
+  readonly #received: StubWrite[] = [];
+  #readCalls = 0;
 
   constructor(source?: StubSource) {
     const fixture = source === undefined ? defaultFixture : (JSON.parse(source.fixture) as Fixture);
-    const now = source === undefined ? Date.now() : Date.parse(source.now);
+    // No source, or a source with no clock: the dates count back from today.
+    const now = typeof source?.now === "string" ? Date.parse(source.now) : Date.now();
     const base = `${FIXTURE_URL_BASE}/${fixture.repo.fullName}`;
 
     this.#repo = { ...fixture.repo };
@@ -108,27 +116,44 @@ export class StubGitHubDriver implements GitHubDriver {
     return [...this.#writes];
   }
 
+  /** The writes this instance received, in order, each in the shape of a plan write. For tests. */
+  receivedWrites(): readonly StubWrite[] {
+    return this.#received.map((write) => ({ ...write }));
+  }
+
+  /** The number of read calls that reached this instance. For tests. */
+  readCalls(): number {
+    return this.#readCalls;
+  }
+
   async listPullRequests(_repo: RepoRef, state: IssueState): Promise<PullRequest[]> {
+    this.#readCalls += 1;
     return this.#pulls.filter((pull) => matchesState(pull.state, state));
   }
 
   async getPullRequest(_repo: RepoRef, number: number): Promise<PullRequest> {
+    this.#readCalls += 1;
     return this.#findPull(number);
   }
 
   async listIssues(_repo: RepoRef, state: IssueState): Promise<Issue[]> {
+    this.#readCalls += 1;
     return this.#issues.filter((issue) => matchesState(issue.state, state));
   }
 
   async listComments(_repo: RepoRef, number: number): Promise<Comment[]> {
+    this.#readCalls += 1;
     return [...(this.#comments.get(number) ?? [])];
   }
 
   async getRepo(_repo: RepoRef): Promise<Repo> {
+    this.#readCalls += 1;
     return { ...this.#repo };
   }
 
   async createComment(_repo: RepoRef, number: number, body: string): Promise<WriteReceipt> {
+    this.#received.push({ kind: WriteKind.Comment, number, body });
+
     const comments = this.#comments.get(number) ?? [];
     const id = Date.now();
 
@@ -139,6 +164,8 @@ export class StubGitHubDriver implements GitHubDriver {
   }
 
   async closePullRequest(_repo: RepoRef, number: number): Promise<WriteReceipt> {
+    this.#received.push({ kind: WriteKind.ClosePullRequest, number });
+
     const pull = this.#findPull(number);
     pull.state = "closed";
 
@@ -146,6 +173,8 @@ export class StubGitHubDriver implements GitHubDriver {
   }
 
   async closeIssue(_repo: RepoRef, number: number): Promise<WriteReceipt> {
+    this.#received.push({ kind: WriteKind.CloseIssue, number });
+
     const issue = this.#issues.find((candidate) => candidate.number === number);
 
     if (!issue) {

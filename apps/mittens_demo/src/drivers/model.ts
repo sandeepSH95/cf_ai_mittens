@@ -116,6 +116,79 @@ export class StubModelDriver implements ModelDriver {
   }
 }
 
+/**
+ * One step of a script, as the verifier's contract writes it:
+ *   { tool: "code", program }   call the code tool with this program text
+ *   { tool: "apply_writes" }    call the apply tool with the plan of the last program result
+ *   { text }                    answer with this text
+ */
+export type ScriptStep = { tool: string; program?: string } | { text: string };
+
+/** Played when a script has no step: the model says nothing and the turn ends. */
+const SILENT_STEP: ScriptStep = { text: "" };
+
+/**
+ * A model that plays one script step per model call, in order. The last
+ * step repeats, so a script of one tool call never ends by itself and the
+ * agent's step limit must stop it.
+ *
+ * One instance lives as long as its script: the count of played steps must
+ * survive the pause for the human's approval, when the agent builds a new
+ * model object for the rest of the turn.
+ */
+export class ScriptedModelDriver implements ModelDriver {
+  readonly kind = ModelDriverKind.Stub;
+  readonly modelId = STUB_MODEL_ID;
+  readonly #steps: ScriptStep[];
+  readonly #tools: Pick<StubScript, "codeTool" | "applyTool">;
+  #played = 0;
+  #lastPrompt: StreamOptions["prompt"] = [];
+
+  constructor(steps: ScriptStep[], tools: Pick<StubScript, "codeTool" | "applyTool">) {
+    this.#steps = steps.length > 0 ? steps : [SILENT_STEP];
+    this.#tools = tools;
+  }
+
+  model(): LanguageModel {
+    return new MockLanguageModelV3({
+      provider: STUB_PROVIDER,
+      modelId: STUB_MODEL_ID,
+      doStream: async (options) => ({ stream: toStream(turnParts(this.#nextTurn(options))) })
+    });
+  }
+
+  /**
+   * The `output.type` of the last result of one tool in the last prompt this model received.
+   * Example: "execution-denied" after the human rejected apply_writes. Null when the prompt has none.
+   */
+  lastOutputType(toolName: string): string | null {
+    const result = toolResults(this.#lastPrompt).findLast((candidate) => candidate.toolName === toolName);
+
+    return result?.output.type ?? null;
+  }
+
+  #nextTurn(options: StreamOptions): ScriptedTurn {
+    const step = this.#steps[Math.min(this.#played, this.#steps.length - 1)];
+
+    this.#played += 1;
+    this.#lastPrompt = options.prompt;
+
+    if ("text" in step) {
+      return { text: step.text };
+    }
+
+    if (step.tool !== this.#tools.applyTool) {
+      return { toolCall: { name: step.tool, input: { code: step.program ?? "" } } };
+    }
+
+    // The script names no plan: the model passes on what the last program returned.
+    const codeResult = toolResults(options.prompt).findLast((result) => result.toolName === this.#tools.codeTool);
+    const plan = codeResult === undefined ? null : planFromResult(codeResult);
+
+    return { toolCall: { name: step.tool, input: { plan } } };
+  }
+}
+
 /** A model that plays fixed turns in order; the last turn repeats. For tests. */
 export function scriptedModel(turns: ScriptedTurn[]): MockLanguageModelV3 {
   let index = 0;

@@ -25,6 +25,7 @@ import { routeAgentRequest } from "agents";
 import { wrapAISDK } from "agents/observability/ai";
 import * as ai from "ai";
 import { convertToModelMessages, stepCountIs, type StepResult, type ToolSet } from "ai";
+import { deniedAsResponded } from "./services/denial";
 import { Ledger, type LedgerRow } from "./services/ledger";
 import { prepareTurn } from "./services/turn";
 
@@ -57,8 +58,9 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
     const recorded: number[] = [];
 
     const turn = prepareTurn(this.env, {
-      gate: this.ctx.exports.GitHubGate({ props: { runId } }),
+      gate: this.ctx.exports.GitHubGate({ props: { runId, scope: this.name } }),
       ledger,
+      scope: this.name,
       onRecorded: (row) => {
         recorded.push(row.id);
         this.setState({ lastProgram: row.program, lastLedger: row, runs: this.state.runs + 1, modelId: turn.modelId });
@@ -68,14 +70,17 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
     const result = streamText({
       model: turn.model,
       system: turn.system,
-      messages: await convertToModelMessages(this.messages, { tools: turn.tools }),
+
+      // A rejected apply_writes must reach the model as "execution-denied" (GATE-002).
+      messages: await convertToModelMessages(deniedAsResponded(this.messages), { tools: turn.tools }),
       tools: turn.tools,
       stopWhen: stepCountIs(turn.stepLimit),
       abortSignal: options?.abortSignal,
       onStepFinish: (step) => this.#attachUsage(ledger, recorded.splice(0), step)
     });
 
-    return result.toUIMessageStreamResponse();
+    // The default text is "An error occurred.". The human must read why a plan was refused or a program failed.
+    return result.toUIMessageStreamResponse({ onError: errorText });
   }
 
   /** GET .../ledger returns the state and the last ledger rows. Other paths fall through. */
@@ -107,6 +112,11 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
       this.setState({ ...this.state, lastLedger: { ...last, tokensIn: usage.inputTokens ?? null, tokensOut: usage.outputTokens ?? null } });
     }
   }
+}
+
+/** Example: a PlanRefusal becomes "Plan refused: 26 writes, the limit is 25". */
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export default {
