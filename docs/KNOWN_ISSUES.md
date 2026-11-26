@@ -61,3 +61,23 @@ To investigate: a size check on the arguments of the known heavy built-ins, a re
 Logged 26 November 2026, from the second review. Status: open.
 
 The gate reports each read to the agent's meter. A read still runs, with no count and no error, when the gate handle has no scope, when the agent has no meter, or when the run id does not match. The demo's live path sets all three, and gold case G-047 covers it. The handle with no scope is also what the testing entry's `openGate()` returns by contract, so "refuse every read that cannot be counted" would break that contract. A fix needs a contract change first: a gate handle that states if it is metered.
+
+## KI-006: an approval is not bound to one plan by a signature
+
+Logged 26 November 2026, from the second review. Investigated the same day by reading the chat SDK. Status: accepted for the first version, inside the threat model.
+
+What is true: the chat protocol trusts the client for the message history. A client can send its whole message list and the agent stores it (`@cloudflare/ai-chat`, the `persistMessages` calls for incoming messages). After an approval the SDK takes the plan from that stored history. So a client can replace the plan of a pending approval with another plan. The AI SDK has an option that signs an approval for one input, and the build does not use it.
+
+Why the first version accepts it: the client is the human who approves. The parties the design does not trust are the model, the generated program and the data the program reads. None of them can write to the stored history between the approval request and the answer. A plan that a client swaps in is still validated in `execute` (kinds, the 25 write limit, the comment length) before any write.
+
+What stays open: a script injected into the page acts as the human. That is the browser's threat model, not this project's, but a later version can close it: sign the approval, or keep the plan of the last program on the host and apply only that plan. The second choice also binds a plan to a program run, which the first review named.
+
+## KI-007: a read that a program does not wait for
+
+Logged 26 November 2026, from the second review. Investigated the same day with an experiment. Status: not reproduced, no change.
+
+The concern: a program starts a read, does not await it and returns. The read could arrive after the meter was read, and land in no ledger row or in the row of the next program.
+
+The experiment, in the test runtime: a program fired two reads with no `await` and returned. In a second run a quiet program followed it in the same turn. Result in both runs: the stub received 0 reads and the ledger row had `facade_calls` 0. The isolate ends with the program, and its pending calls end with it. The count and the driver agreed, and the next program's row was not changed.
+
+Limit of the experiment: one run of each shape, local runtime only. The order of an isolate's end and a pending RPC is not a documented guarantee.
