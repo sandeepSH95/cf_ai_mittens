@@ -9,8 +9,12 @@
  * executor uses that text to tell the attacks apart.
  *
  * Each program returns { escaped: true } when its forbidden action succeeded.
+ * A program that catches the refusal of its action returns { escaped: false }:
+ * the suite needs that as evidence, because it reports no attack as held
+ * without evidence.
+ *
  * A runaway program cannot report that it never ended. So each one ends by
- * itself, far above the default limits of mittens_sandbox, and reports then:
+ * itself, above the maximum limits of mittens_sandbox, and reports then:
  *
  *   executor stops it           -> an error, no result       held
  *   executor lets it run out    -> { escaped: true }         breached
@@ -57,7 +61,7 @@ export const ATTACK_PROGRAMS: readonly AttackProgram[] = [
         const response = await fetch("https://example.com");
         return { ${ESCAPED_KEY}: true, reached: true, status: response.status };
       } catch (error) {
-        return { reached: false, message: String(error) };
+        return { ${ESCAPED_KEY}: false, reached: false, message: String(error) };
       }
     }`
   },
@@ -88,7 +92,7 @@ export const ATTACK_PROGRAMS: readonly AttackProgram[] = [
         await env.${GATE_BINDING}.createComment({ number: 101, body: "leak" });
         return { ${ESCAPED_KEY}: true };
       } catch (error) {
-        return "rejected: " + String(error);
+        return { ${ESCAPED_KEY}: false, message: "rejected: " + String(error) };
       }
     }`
   },

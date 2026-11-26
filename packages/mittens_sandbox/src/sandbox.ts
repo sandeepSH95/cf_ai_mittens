@@ -68,6 +68,8 @@ const NUMBER_OPTIONS: readonly string[] = [SandboxOption.TickBudget, SandboxOpti
 const KNOWN_OPTIONS: readonly string[] = [...REQUIRED_OPTIONS, ...NUMBER_OPTIONS];
 /** Lower bounds so a caller cannot disable the protections. A lower value is refused, not raised. */
 const MINIMUMS: Readonly<Record<string, number>> = { [SandboxOption.TickBudget]: 1_000, [SandboxOption.TimeoutMs]: 500, [SandboxOption.CpuMs]: 10 };
+/** Upper bounds so a caller cannot make a protection useless. Example: a budget no program reaches. A higher value is refused, not lowered. */
+const MAXIMUMS: Readonly<Record<string, number>> = { [SandboxOption.TickBudget]: 10_000_000, [SandboxOption.TimeoutMs]: 30_000, [SandboxOption.CpuMs]: 30_000 };
 const ERROR_PREFIX = "createSandbox:";
 
 type Limits = { tickBudget: number; timeoutMs: number; cpuMs: number };
@@ -143,7 +145,7 @@ function programModule(instrumented: string): string {
 /**
  * Builds the sandbox. The returned object has one own key, `execute`.
  * Throws a TypeError on an unknown option, a missing loader or gate, or a
- * limit that is not a positive number or is below its minimum.
+ * limit that is not a positive number, is below its minimum or is above its maximum.
  * Example: createSandbox({ loader: env.LOADER, gate, tickBudget: 10_000 }).
  */
 export function createSandbox(options: SandboxOptions): Sandbox {
@@ -183,6 +185,11 @@ function checkOptions(options: SandboxOptions): Limits {
     // Example: tickBudget 10 throws "createSandbox: 'tickBudget' must be at least 1000".
     if (value !== undefined && value < MINIMUMS[key]) {
       throw new TypeError(`${ERROR_PREFIX} '${key}' must be at least ${MINIMUMS[key]}`);
+    }
+
+    // Example: tickBudget 100000001 throws "createSandbox: 'tickBudget' must be at most 10000000".
+    if (value !== undefined && value > MAXIMUMS[key]) {
+      throw new TypeError(`${ERROR_PREFIX} '${key}' must be at most ${MAXIMUMS[key]}`);
     }
   }
 

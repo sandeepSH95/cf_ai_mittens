@@ -6,15 +6,20 @@
  *        v
  *   execute(attack.code)  -> whatever the executor reports (result, error, ...)
  *        |
- *        v  does the program's result hold escaped: true?
- *        v  do the canary's bytes appear anywhere in it, as plain text or in base64?
+ *        v  does the program's result hold escaped: true?                             breached
+ *        v  do the canary's bytes appear anywhere in it, as plain text or in base64?  breached
+ *        v  did the executor reject or throw?                                         breached
+ *        v  is there evidence: an error, or a result with escaped: false?             held
+ *        v  neither                                                                   breached
  *   { name, outcome: "held" | "breached", detail }
  *        |
  *        v
  *   { cases: [...], breached: <count of breached cases> }
  *
  * The suite judges two things: the token must not come back, and no program
- * may report that its forbidden action succeeded. What an executor returns
+ * may report that its forbidden action succeeded. "Held" is never the default:
+ * an executor that ran nothing and reported nothing proved nothing, so the
+ * suite reports a breach for it. What an executor returns
  * for a held attack (its error text, its binding names) belongs to the
  * executor, so its own tests assert on that.
  */
@@ -32,9 +37,16 @@ export type AttackReport = { cases: AttackCase[]; breached: number };
 
 const EXECUTE_ERROR = "attackSandbox: execute must be a function";
 const CANARY_ERROR = "attackSandbox: canary must be a non-empty string";
-const HELD_DETAIL = "the program did not escape and the canary is not in the result or the error";
+const STOPPED_DETAIL = "the executor stopped the program with an error and the canary is not in it";
+const REFUSED_DETAIL = "the program ran, its forbidden action was refused and the canary is not in the result";
 const BREACHED_DETAIL = "the canary came back from the executor";
 const ESCAPED_DETAIL = "the program reported that its forbidden action succeeded";
+const REJECTED_DETAIL = "the executor rejected or threw, so it gave no outcome to judge";
+const NO_EVIDENCE_DETAIL = "no evidence of a stop: the executor reported no error and the result does not hold escaped: false";
+
+/** How the executor answered: with a value, or by a rejection or a throw. */
+const Answer = { Resolved: "resolved", Rejected: "rejected" } as const;
+type Answer = (typeof Answer)[keyof typeof Answer];
 
 const BASE64_GROUP_BYTES = 3;
 /** Base64 characters at the start of a needle that also depend on the 0, 1 or 2 bytes in front of the canary. */
@@ -65,15 +77,17 @@ export async function attackSandbox(options: AttackOptions): Promise<AttackRepor
 
 async function runAttack(options: AttackOptions, attack: AttackProgram): Promise<AttackCase> {
   let reported: unknown;
+  let answer: Answer = Answer.Resolved;
 
   // An executor that throws still reports something: its error can carry the canary.
   try {
     reported = await options.execute(attack.code);
   } catch (error) {
     reported = error;
+    answer = Answer.Rejected;
   }
 
-  if (reportsEscape(reported)) {
+  if (escapedFlag(reported) === true) {
     return { name: attack.name, outcome: AttackOutcome.Breached, detail: ESCAPED_DETAIL };
   }
 
@@ -81,18 +95,47 @@ async function runAttack(options: AttackOptions, attack: AttackProgram): Promise
     return { name: attack.name, outcome: AttackOutcome.Breached, detail: BREACHED_DETAIL };
   }
 
-  return { name: attack.name, outcome: AttackOutcome.Held, detail: HELD_DETAIL };
+  // A rejection is not the executor's `error`: execute must resolve, so nothing was judged.
+  if (answer === Answer.Rejected) {
+    return { name: attack.name, outcome: AttackOutcome.Breached, detail: REJECTED_DETAIL };
+  }
+
+  if (reportsStop(reported)) {
+    return { name: attack.name, outcome: AttackOutcome.Held, detail: STOPPED_DETAIL };
+  }
+
+  if (escapedFlag(reported) === false) {
+    return { name: attack.name, outcome: AttackOutcome.Held, detail: REFUSED_DETAIL };
+  }
+
+  return { name: attack.name, outcome: AttackOutcome.Breached, detail: NO_EVIDENCE_DETAIL };
 }
 
-// Each program of the suite returns { escaped: true } when its forbidden action succeeded.
-// Example: { result: { escaped: true, status: 200 }, error: null } reports an escape.
-function reportsEscape(reported: unknown): boolean {
+// Each program of the suite returns { escaped: true } when its forbidden action succeeded
+// and { escaped: false } when it caught the refusal. Any other value is no statement.
+// Example: { result: { escaped: true, status: 200 }, error: null } gives true.
+// Example: { result: null, error: null } gives undefined.
+function escapedFlag(reported: unknown): boolean | undefined {
   try {
     const result = (reported as { result?: unknown } | null)?.result;
+    const flag = (result as Record<string, unknown> | null)?.[ESCAPED_KEY];
 
-    return (result as Record<string, unknown> | null)?.[ESCAPED_KEY] === true;
+    return typeof flag === "boolean" ? flag : undefined;
   } catch {
     // A value that throws when it is read reports nothing.
+    return undefined;
+  }
+}
+
+// The executor stopped the program when its outcome carries an error.
+// Example: { result: null, error: "Program stopped: execution timed out" } is a stop.
+// Example: { result: null, error: null } is not, and neither is an outcome with no `error` key.
+function reportsStop(reported: unknown): boolean {
+  try {
+    const error = (reported as { error?: unknown } | null)?.error;
+
+    return error !== null && error !== undefined;
+  } catch {
     return false;
   }
 }

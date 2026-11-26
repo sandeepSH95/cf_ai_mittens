@@ -16,6 +16,7 @@ import { runProgram } from "./support";
 
 const NETWORK_DENIED = "not permitted to access the internet";
 const RUNAWAY_LIMIT_MS = 5_000;
+const UNGUARDED_STOP = "stopped by the test";
 
 /** Limits small enough that a runaway program ends fast. */
 const SMALL_LIMITS = { tickBudget: 10_000, timeoutMs: 500 };
@@ -33,11 +34,12 @@ function attack(name: string): Promise<ProgramRun> {
 
 /**
  * An executor with a network and no gate: it answers fetch with 200 and runs
- * the two fetch attacks as they are. Every other attack gets an inert answer.
+ * the two fetch attacks as they are. Every other attack is stopped with an
+ * error, which is the evidence the suite needs to report it as held.
  */
 async function runUnguarded(program: string): Promise<{ result: unknown; error: string | null }> {
   if (!program.includes("fetch(")) {
-    return { result: null, error: null };
+    return { result: null, error: UNGUARDED_STOP };
   }
 
   const fetchOk = async () => new Response("ok");
@@ -58,7 +60,7 @@ describe("SBX-001 generated code cannot reach the network", () => {
     const run = await attack("swallowed fetch");
 
     expect(run.error).toBeNull();
-    expect(run.result).toMatchObject({ reached: false });
+    expect(run.result).toMatchObject({ escaped: false, reached: false });
     expect(String((run.result as { message: string }).message)).toContain(NETWORK_DENIED);
   });
 });
@@ -88,7 +90,8 @@ describe("GATE-001 the gate handle has read methods only", () => {
     const run = await attack("direct write call");
 
     expect(run.error).toBeNull();
-    expect(String(run.result)).toMatch(/^rejected: /);
+    expect(run.result).toMatchObject({ escaped: false });
+    expect(String((run.result as { message: string }).message)).not.toBe("");
   });
 
   it("a write method through the github global is rejected too", async () => {
@@ -179,6 +182,35 @@ describe("ATK-003 the suite judges by the canary", () => {
 
     expect(breached).toEqual(["network fetch", "swallowed fetch"]);
   });
+
+  it("reports a breach for an outcome with no evidence: no error and no escaped: false", async () => {
+    const inert = await attackSandbox({ execute: async () => ({ result: null, error: null, facadeCalls: 0, isolateStartMs: null }), canary: CANARY_GITHUB_TOKEN });
+    const otherResult = await attackSandbox({ execute: async () => ({ result: { done: true }, error: null }), canary: CANARY_GITHUB_TOKEN });
+    const nothing = await attackSandbox({ execute: async () => undefined, canary: CANARY_GITHUB_TOKEN });
+
+    expect(inert.breached).toBe(ATTACK_PROGRAMS.length);
+    expect(otherResult.breached).toBe(ATTACK_PROGRAMS.length);
+    expect(nothing.breached).toBe(ATTACK_PROGRAMS.length);
+  });
+
+  it("reports a breach for an executor that rejects or throws, with no canary in the error", async () => {
+    const rejecting = await attackSandbox({ execute: async () => Promise.reject(new Error("no")), canary: CANARY_GITHUB_TOKEN });
+    const throwing = await attackSandbox({
+      execute: () => {
+        throw new Error("no");
+      },
+      canary: CANARY_GITHUB_TOKEN
+    });
+
+    expect(rejecting.breached).toBe(ATTACK_PROGRAMS.length);
+    expect(throwing.breached).toBe(ATTACK_PROGRAMS.length);
+  });
+
+  it("reports held for an executor that stopped every program with an error", async () => {
+    const stopped = await attackSandbox({ execute: async () => ({ result: null, error: UNGUARDED_STOP }), canary: CANARY_GITHUB_TOKEN });
+
+    expect(stopped.breached).toBe(0);
+  });
 });
 
 describe("SBX-004 a limit below its minimum is refused", () => {
@@ -189,5 +221,14 @@ describe("SBX-004 a limit below its minimum is refused", () => {
     expect(() => createSandbox({ ...options, timeoutMs: 499 })).toThrow("createSandbox: 'timeoutMs' must be at least 500");
     expect(() => createSandbox({ ...options, cpuMs: 9 })).toThrow("createSandbox: 'cpuMs' must be at least 10");
     expect(() => createSandbox({ ...options, tickBudget: 1000, timeoutMs: 500, cpuMs: 10 })).not.toThrow();
+  });
+
+  it("throws for each limit above its maximum, and accepts the maximum", () => {
+    const options = { loader: env.LOADER, gate: openGate() };
+
+    expect(() => createSandbox({ ...options, tickBudget: 10_000_001 })).toThrow("createSandbox: 'tickBudget' must be at most 10000000");
+    expect(() => createSandbox({ ...options, timeoutMs: 30_001 })).toThrow("createSandbox: 'timeoutMs' must be at most 30000");
+    expect(() => createSandbox({ ...options, cpuMs: 30_001 })).toThrow("createSandbox: 'cpuMs' must be at most 30000");
+    expect(() => createSandbox({ ...options, tickBudget: 10_000_000, timeoutMs: 30_000, cpuMs: 30_000 })).not.toThrow();
   });
 });
