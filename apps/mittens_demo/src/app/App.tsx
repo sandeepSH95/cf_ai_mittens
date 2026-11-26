@@ -46,7 +46,7 @@ export function App() {
     <main style={styles.page}>
       <section style={styles.chat}>
         <header style={styles.header}>
-          <h1 style={styles.title}>Keyless Code Mode</h1>
+          <h1 style={styles.title}>Mittens</h1>
           <button type="button" onClick={clearHistory} style={styles.minor}>
             Clear
           </button>

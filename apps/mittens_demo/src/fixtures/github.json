@@ -1,7 +1,7 @@
 {
   "repo": {
     "fullName": "octocat/hello-world",
-    "description": "Fixture repository for the Keyless Code Mode stub driver",
+    "description": "Fixture repository for the Mittens stub driver",
     "openIssues": 10,
     "defaultBranch": "main"
   },

@@ -123,7 +123,7 @@ export class StubGitHubDriver implements GitHubDriver {
     const comments = this.#comments.get(number) ?? [];
     const id = Date.now();
 
-    comments.push({ id, author: "keyless-codemode[bot]", body, createdAt: new Date().toISOString() });
+    comments.push({ id, author: "mittens[bot]", body, createdAt: new Date().toISOString() });
     this.#comments.set(number, comments);
 
     return this.#record({ kind: WriteKind.Comment, number, url: null });

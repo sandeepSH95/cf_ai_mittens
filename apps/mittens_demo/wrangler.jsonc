@@ -1,8 +1,8 @@
 {
-  // Keyless Code Mode: a chat agent whose model writes one program per task.
+  // Mittens: a chat agent whose model writes one program per task.
   // The program runs in a Dynamic Worker (env.LOADER) with no network and
   // reaches GitHub only through the GitHubGate loopback entrypoint.
-  "name": "cf-ai-keyless-codemode",
+  "name": "cf-ai-mittens",
   "main": "src/server.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],

@@ -1,5 +1,5 @@
 /**
- * Keyless Code Mode.
+ * Mittens.
  *
  *   Browser (useAgentChat) --WS--> Worker --routeAgentRequest--> CoderAgent (Durable Object, AIChatAgent)
  *   "close my stale PRs"                                            |

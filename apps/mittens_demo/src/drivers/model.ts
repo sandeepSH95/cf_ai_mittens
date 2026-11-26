@@ -22,7 +22,7 @@ export type ModelDriverKind = (typeof ModelDriverKind)[keyof typeof ModelDriverK
 export const WORKERS_AI_MODEL: WorkersAIModelId = "@cf/openai/gpt-oss-120b";
 export const WORKERS_AI_ALTERNATIVE_MODEL: WorkersAIModelId = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const STUB_PROVIDER = "stub";
-const STUB_MODEL_ID = "stub/keyless-codemode";
+const STUB_MODEL_ID = "stub/mittens";
 
 /** Fixed token counts the stub reports. They exist so the ledger columns are exercised; they measure nothing. */
 const STUB_USAGE = {
