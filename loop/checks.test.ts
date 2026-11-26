@@ -11,7 +11,7 @@ import { describe, test } from "node:test";
 
 import { Mode, verdict } from "../.claude/hooks/guard.ts";
 import { regressions } from "../.claude/hooks/stop.ts";
-import { Stop, capReached, nextPass, parseCaps } from "./loop.ts";
+import { Stop, builderEnv, capReached, nextPass, parseCaps } from "./loop.ts";
 import { LEDGER_PATH, recordPass } from "./record.ts";
 
 const ROOT = "/repo";
@@ -79,6 +79,19 @@ describe("guard, builder pass", () => {
     assert.equal(bash("ls ../mittens_holdout"), "fenced path: mittens_holdout. Stop and report.");
     assert.equal(bash("GOLD_DIR=../mittens_holdout sh verify/run.sh"), "fenced path: mittens_holdout. Stop and report.");
     assert.equal(fileTool("Read", "/work/mittens_holdout/G-901.json"), "fenced path: mittens_holdout. Stop and report.");
+  });
+});
+
+describe("builder secrets", () => {
+  test("refuses every access to .dev.vars", () => {
+    assert.equal(bash("cat apps/mittens_demo/.dev.vars"), "fenced path: .dev.vars. Stop and report.");
+    assert.equal(fileTool("Read", "/repo/apps/mittens_demo/.dev.vars"), "fenced path: .dev.vars. Stop and report.");
+  });
+
+  test("starts a pass without the caller's credentials", () => {
+    const env = builderEnv({ PATH: "/bin", GITHUB_TOKEN: "x", CLOUDFLARE_API_KEY: "x", npm_password: "x", ANTHROPIC_API_KEY: "own" });
+
+    assert.deepEqual(env, { PATH: "/bin", ANTHROPIC_API_KEY: "own", MITTENS_LOOP: "1" });
   });
 });
 

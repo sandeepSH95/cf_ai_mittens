@@ -7,7 +7,7 @@
  * Two rule sets:
  *   always on       no wrangler deploy, login or secret; no git push. A human does these.
  *   builder passes  (MITTENS_LOOP=1, set by loop/loop.ts) no write inside the fence,
- *                   and no access at all to the held-out set.
+ *                   and no access at all to the held-out set or to .dev.vars.
  *
  * The Bash rule reads the command text. It stops the plain mistakes, not a
  * builder that hides a path on purpose. The manifest check in verify/manifest.ts
@@ -37,6 +37,10 @@ const FENCED: readonly string[] = [...FENCED_DIRS, MANIFEST_PATH];
 const HUMAN_STEP = "deploy and secrets are human steps";
 const PUSH_STEP = "git push is a human step";
 const HELD_OUT_REASON = `fenced path: ${HELD_OUT_NAME}. Stop and report.`;
+
+// The file that holds the GitHub token for local runs. A builder never needs it.
+const SECRETS_FILE = ".dev.vars";
+const SECRETS_REASON = `fenced path: ${SECRETS_FILE}. Stop and report.`;
 
 // Example: "npx wrangler versions deploy" and "wrangler secret put X".
 const WRANGLER_HUMAN = /\bwrangler\b[^;&|\n]*\b(secret|login|deploy|publish)\b/;
@@ -110,6 +114,10 @@ function fileVerdict(call: ToolCall, root: string): string | null {
     return HELD_OUT_REASON;
   }
 
+  if (paths.some((candidate) => candidate.includes(SECRETS_FILE))) {
+    return SECRETS_REASON;
+  }
+
   if (!WRITE_TOOLS.includes(call.tool_name ?? "")) {
     return null;
   }
@@ -123,6 +131,10 @@ function fileVerdict(call: ToolCall, root: string): string | null {
 function bashVerdict(command: string, root: string, cwd: string): string | null {
   if (command.includes(HELD_OUT_NAME)) {
     return HELD_OUT_REASON;
+  }
+
+  if (command.includes(SECRETS_FILE)) {
+    return SECRETS_REASON;
   }
 
   for (const segment of command.split(SEGMENT_END)) {

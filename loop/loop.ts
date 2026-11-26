@@ -38,16 +38,45 @@ const LOOP_ON = "1";
 
 const BUILDER_COMMAND = "claude";
 
-// The builder may edit and run commands without a person. The hooks in
-// .claude/ and the manifest are what keeps it out of the fenced files.
+// A build needs no network client and no deploy. These rules are checked by
+// Claude Code itself, before the hook in .claude/hooks/guard.ts reads the call.
+const DENIED_TOOLS: readonly string[] = [
+  "WebFetch",
+  "WebSearch",
+  "Bash(curl:*)",
+  "Bash(wget:*)",
+  "Bash(nc:*)",
+  "Bash(ssh:*)",
+  "Bash(scp:*)",
+  "Bash(gh:*)",
+  "Bash(git push:*)",
+  "Bash(wrangler:*)",
+  "Bash(npx wrangler deploy:*)",
+  "Bash(npx wrangler login:*)",
+  "Bash(npx wrangler secret:*)",
+];
+
+// The builder may edit and run commands without a person. It can still run
+// node and npm, so these flags are not an isolation boundary: the manifest is
+// what catches a changed fenced file, and a sandbox or a container is the
+// boundary for a run on a machine that holds credentials.
 const BUILDER_FLAGS: readonly string[] = [
   "--permission-mode",
   "acceptEdits",
   "--allowedTools",
   "Bash,Read,Edit,Write,Glob,Grep",
+  "--disallowedTools",
+  DENIED_TOOLS.join(","),
   "--output-format",
   "json",
 ];
+
+// A variable with one of these words in its name can hold a credential.
+// Example: GITHUB_TOKEN, CLOUDFLARE_API_KEY, NPM_PASSWORD.
+const SECRET_NAME = /TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL/i;
+
+// The builder itself needs its own sign-in. Example: ANTHROPIC_API_KEY.
+const BUILDER_OWN_NAME = /^(ANTHROPIC|CLAUDE)_/;
 
 const MS_PER_MINUTE = 60_000;
 const CAP_LINE = /^([A-Z_]+)=([0-9]+)$/;
@@ -120,6 +149,24 @@ export function capReached(caps: Caps, progress: Progress): Stop {
   return Stop.NONE;
 }
 
+/**
+ * The environment of a builder pass: the caller's, without the variables that
+ * can hold a credential. The builder has no use for a GitHub or Cloudflare token.
+ */
+export function builderEnv(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const kept: NodeJS.ProcessEnv = {};
+
+  for (const [name, value] of Object.entries(source)) {
+    if (SECRET_NAME.test(name) && !BUILDER_OWN_NAME.test(name)) {
+      continue;
+    }
+
+    kept[name] = value;
+  }
+
+  return { ...kept, [LOOP_VARIABLE]: LOOP_ON };
+}
+
 /** The pass number after the last ledger line. Example: last line pass 3 -> 4. */
 export function nextPass(ledgerText: string): number {
   const lines = ledgerText.split("\n").filter((line) => line.trim() !== "");
@@ -146,7 +193,7 @@ function runBuilder(root: string, pass: number, timeoutMinutes: number): void {
   try {
     spawnSync(BUILDER_COMMAND, ["-p", prompt, ...BUILDER_FLAGS], {
       cwd: root,
-      env: { ...process.env, [LOOP_VARIABLE]: LOOP_ON },
+      env: builderEnv(process.env),
       stdio: ["ignore", output, "inherit"],
       timeout: timeoutMinutes * MS_PER_MINUTE,
     });
