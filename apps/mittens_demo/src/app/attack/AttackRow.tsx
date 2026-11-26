@@ -7,14 +7,14 @@ import { TableCell, TableRow } from "@/components/ui/table";
 
 import { FAILED_LABEL, NOT_RUN_LABEL, Outcome, RUNNING_LABEL, RunPhase, type DisplayRow } from "./constants";
 
-/** The table has four columns. The source row spans all of them. */
-export const ATTACK_COLUMNS = 4;
+/** The table has five columns. The source row spans all of them. */
+export const ATTACK_COLUMNS = 5;
 
 /**
- * One attack: name, criterion id, verdict and detail. A row with a program
+ * One attack: name, criterion id, the expected verdict, the verdict and detail. A row with a program
  * opens on a click and shows the source below it.
  */
-export function AttackRowView({ row, phase }: { row: DisplayRow; phase: RunPhase }) {
+export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase: RunPhase; expected: DisplayRow["outcome"] }) {
   const [open, setOpen] = useState(false);
   const sourceId = useId();
   const hasSource = row.code.length > 0;
@@ -23,7 +23,7 @@ export function AttackRowView({ row, phase }: { row: DisplayRow; phase: RunPhase
   return (
     <>
       <TableRow>
-        <TableCell className="font-medium">
+        <TableCell className="font-medium whitespace-normal">
           {hasSource ? (
             <button
               type="button"
@@ -43,11 +43,14 @@ export function AttackRowView({ row, phase }: { row: DisplayRow; phase: RunPhase
 
         <TableCell className="font-mono text-xs text-muted-foreground">{row.criterion}</TableCell>
 
+        {/* Plain text, not a badge: the expected verdict is a reference, the outcome is the result. */}
+        <TableCell className="text-xs text-muted-foreground">{expected}</TableCell>
+
         <TableCell>
           <OutcomeBadge outcome={row.outcome} phase={phase} />
         </TableCell>
 
-        <TableCell className="min-w-40 whitespace-normal text-muted-foreground">{row.detail}</TableCell>
+        <TableCell className="whitespace-normal text-muted-foreground">{row.detail}</TableCell>
       </TableRow>
 
       {showSource ? (

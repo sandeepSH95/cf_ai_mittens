@@ -169,3 +169,16 @@ Loop pass is running. From now on run the lop and held out run automatically
 ## 2026-11-26T14:37:16Z, session dfdda72e, HEAD 5275e85
 
 approve as reccomended. ensure frontends use shadcn styling. stub by default. README shoudl follow a show before tellign methodoligy, with diagram, and legger s a chart with link to known issues
+
+## 2026-11-26T14:49:38Z, session dfdda72e, HEAD 4c7698a
+
+Please label excplicitly, to indicate expected results
+
+## 2026-11-26T14:51:07Z, session dfdda72e, HEAD 4c7698a
+
+of S10
+
+1. Draft yourself
+2. Find cause and rport a fix plan
+3. done
+4. will do

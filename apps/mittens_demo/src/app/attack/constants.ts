@@ -46,6 +46,19 @@ export const PENDING_ATTACKS: readonly Pick<DisplayRow, "name" | "criterion">[] 
 
 export const ATTACK_COUNT = PENDING_ATTACKS.length;
 
+/**
+ * What a correct run shows, per executor: the names of the attacks that must
+ * be breached. The page prints this before the run, so a reader knows that
+ * the breach in the naive executor is the point of the page and not a fault.
+ */
+export const EXPECTED_BREACHES = {
+  // The real sandbox must hold every attack.
+  mittens: [],
+
+  // The control: the token is in env on purpose, so reading env must find it.
+  naive: ["env inspection"]
+} as const satisfies Record<string, readonly string[]>;
+
 export const NOT_RUN_LABEL = "not run";
 export const RUNNING_LABEL = "running";
 export const FAILED_LABEL = "no report";

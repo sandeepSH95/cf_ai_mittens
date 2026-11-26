@@ -4,6 +4,7 @@
  *   [Run the 8 attacks]
  *   +---------------------------+  +-------------------------------+
  *   | Mittens sandbox           |  | Naive executor (token in env) |
+ *   | expected: 0 of 8 breached |  | expected: 1 of 8 breached     |
  *   | 0 of 8 breached           |  | 1 of 8 breached               |
  *   | one row per attack        |  | one row per attack            |
  *   +---------------------------+  +-------------------------------+
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 
 import { fetchBothRuns, type AttackRuns } from "./api";
 import { AttackCard } from "./AttackCard";
-import { ATTACK_COUNT, RunPhase } from "./constants";
+import { ATTACK_COUNT, EXPECTED_BREACHES, RunPhase } from "./constants";
 
 const UNKNOWN_ERROR = "The attack run failed for an unknown reason.";
 
@@ -48,7 +49,7 @@ export function AttackTab() {
             Eight attacks, two executors
           </h2>
           <p className="text-sm text-muted-foreground">
-            The same eight attack programs run against two executors. The only difference: the naive executor has the API token in the isolate's env.
+            The same eight attack programs run against two executors. The only difference: the naive executor has the API token in the isolate's env. The expected result is 0 breaches in the Mittens sandbox and 1 breach in the naive executor.
           </p>
         </div>
 
@@ -78,12 +79,18 @@ export function AttackTab() {
         <AttackCard
           title="Mittens sandbox"
           description="No network, no token in the isolate. Reads cross the gate."
+          role="the project"
+          expectedBreaches={EXPECTED_BREACHES.mittens}
+          expectedReason="Every attack must fail here."
           run={state.runs?.mittens ?? null}
           phase={state.phase}
         />
         <AttackCard
           title="Naive executor (token in env)"
           description="The same isolate, with the API token in its env."
+          role="control, unsafe on purpose"
+          expectedBreaches={EXPECTED_BREACHES.naive}
+          expectedReason="This executor makes the mistake on purpose, so the attack that reads env must find the token. The breach here shows that the attacks are real."
           run={state.runs?.naive ?? null}
           phase={state.phase}
         />
