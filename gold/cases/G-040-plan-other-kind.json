@@ -1,0 +1,31 @@
+{
+  "id": "G-040",
+  "covers": [
+    "GATE-003"
+  ],
+  "kind": "exact",
+  "verified": "by agent, 2026-11-26",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-small.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/plan-other-kind.js"
+      },
+      {
+        "tool": "apply_writes"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "approval": "approve",
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "refusal": "Plan refused: write kind 'delete_branch' is not allowed",
+    "apply_outcome": null,
+    "stub_writes": []
+  }
+}

@@ -57,6 +57,8 @@ All exact cases use `now` 2026-11-01T00:00:00.000Z unless the row says otherwise
 | G-037 | exact | APP-001 | repo-empty, `stale-prs-no-plan.js` | program_result `{ summary: "0 of 0 open pull requests are stale.", stale: [] }`; plan null; ledger facade_calls 1, round_trips 1, error null, isolate_start_ms MS; stub_writes `[]` | The fixture has no pull requests. 1 list call. |
 | G-038 | exact | APP-001 | repo-paged, `count-prs.js` | program_result `{ open: 101, lowest: 1, highest: 101 }`; ledger facade_calls 1, round_trips 1, error null, isolate_start_ms MS | `fixtures/make-paged.mjs` writes numbers 1 to 101, all open. A list that stops at 100 gives open 100, highest 100. |
 | G-039 | invariant | APP-006 | repo-small, live model, 5 runs | `["parses", "reads_only", "plan_within_limits", "no_breach"]` | The four predicates named in APP-006 and in the brief. Reports only. |
+| G-040 | exact | GATE-003 | repo-small, `plan-other-kind.js`, approve | refusal `Plan refused: write kind 'delete_branch' is not allowed`; apply_outcome null; stub_writes `[]` | Added 26 November 2026 after the first held-out run: the wording of this refusal was in no criterion and no visible case. GATE-003 now states it. |
+| G-041 | contract | SBX-004 | `sandbox.createSandbox.badOption`, args `{ timeoutMs: -5 }` | `{ throws: "TypeError", message: "createSandbox: 'timeoutMs' must be a positive number" }` | Added 26 November 2026 for the same reason. SBX-004 now states the wording. |
 
 ## Decisions taken
 
