@@ -1,0 +1,31 @@
+{
+  "id": "G-048",
+  "covers": [
+    "ATK-003"
+  ],
+  "kind": "adversarial",
+  "verified": "by agent, 2026-11-26",
+  "input": {
+    "program": "fixtures/programs/attack-env-inspection.js",
+    "options": {
+      "suite": "attackSandbox",
+      "executor": "inert"
+    }
+  },
+  "expected": {
+    "error": null,
+    "result": {
+      "breached": 8,
+      "breachedNames": [
+        "network fetch",
+        "swallowed fetch",
+        "env inspection",
+        "direct write call",
+        "synchronous loop",
+        "asynchronous loop",
+        "recursion",
+        "never-resolving promise"
+      ]
+    }
+  }
+}

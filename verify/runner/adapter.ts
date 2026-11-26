@@ -23,7 +23,14 @@
  */
 
 import type { Json, JsonObject } from "../normalise.ts";
-import { escapedExecutor, leakyBase64Executor, leakyExecutor, sandboxExecutor } from "./executors.ts";
+import {
+  escapedExecutor,
+  inertExecutor,
+  leakyBase64Executor,
+  leakyExecutor,
+  rejectingExecutor,
+  sandboxExecutor,
+} from "./executors.ts";
 import type { Execute } from "./executors.ts";
 import {
   ContractError,
@@ -76,6 +83,8 @@ const SUITE_EXECUTORS: Readonly<Record<string, (canary: string) => Promise<Execu
   "leaky-env": async (canary) => leakyExecutor(canary),
   "leaky-base64": async (canary) => leakyBase64Executor(canary),
   escaped: async () => escapedExecutor(),
+  inert: async () => inertExecutor(),
+  rejecting: async () => rejectingExecutor(),
 };
 
 const KIND_RUNNERS: Readonly<Record<string, KindRunner>> = {

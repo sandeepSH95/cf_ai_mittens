@@ -66,6 +66,8 @@ All exact cases use `now` 2026-11-01T00:00:00.000Z unless the row says otherwise
 | G-045 | contract | APP-004 | `app.runsInOneTurn`, 10 `code` steps of `no-reads.js` | 6 | Added 26 November 2026 after the review of the loop's build (prompts/briefs/s8-review.md). G-023 reads the constant; this case measures the stop. |
 | G-046 | contract | SBX-004 | `sandbox.createSandbox.badOption`, args `{ tickBudget: 10 }` | `{ throws: "TypeError", message: "createSandbox: 'tickBudget' must be at least 1000" }` | Added 26 November 2026 after the review of the loop's build (prompts/briefs/s8-review.md). The build raised a low limit with no error. |
 | G-047 | exact | APP-003 | repo-small, `read-raw-handle.js` | program_result `{ open: 7 }`; ledger facade_calls 1, round_trips 1, error null, isolate_start_ms MS; driver_calls 1 | Added 26 November 2026 after the review of the loop's build (prompts/briefs/s8-review.md). 7 open pull requests in repo-small, as in G-034. The build counted calls inside the isolate, so this program was counted as 0. |
+| G-048 | adversarial | ATK-003 | suite, executor `inert` | breached 8, all eight names | Added 26 November 2026 after the second review (prompts/briefs/s8-review-2.md). "Held" was the default outcome, so a suite that ran nothing reported success. |
+| G-049 | contract | SBX-004 | `sandbox.createSandbox.badOption`, args `{ tickBudget: 100000001 }` | `{ throws: "TypeError", message: "createSandbox: 'tickBudget' must be at most 10000000" }` | Added 26 November 2026 after the second review (prompts/briefs/s8-review-2.md). The suite's runaway programs end at 100,000,000 steps; a larger budget gave a false breach. |
 
 ## Decisions taken
 

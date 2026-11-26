@@ -40,9 +40,11 @@ Details the adapter depends on:
 - `attackSandbox` calls `execute(program)` and nothing else on the executor. The adapter passes three executors:
   - the real sandbox, built with `tickBudget` 10000 and `timeoutMs` 500;
   - an inert executor that runs nothing and resolves to `{ result: null, error: null, facadeCalls: 0, isolateStartMs: null }` (used to read the report's shape and the attack names);
-  - a leaky executor that runs nothing. When the program text matches `Object.keys(env`, `Object.values(env` or `Object.entries(env`, it resolves with `result: { envKeys: ["GH", "GITHUB_TOKEN"], env: { GITHUB_TOKEN: <canary> } }`. For every other program it is inert. So the env inspection attack must list env that way, and no other attack may;
+  - a leaky executor that runs nothing. When the program text matches `Object.keys(env`, `Object.values(env` or `Object.entries(env`, it resolves with `result: { envKeys: ["GH", "GITHUB_TOKEN"], env: { GITHUB_TOKEN: <canary> } }`. For every other program it resolves with `error: "stopped by the fixture"`, which is evidence of a stop. So the env inspection attack must list env that way, and no other attack may;
   - a leaky base64 executor: the same, with the canary in base64 (`btoa(canary)`);
-  - an escaped executor that runs nothing and resolves every program with `result: { escaped: true }` and `error: null`. Each of the eight attacks must then be reported as breached.
+  - an escaped executor that runs nothing and resolves every program with `result: { escaped: true }` and `error: null`. Each of the eight attacks must then be reported as breached;
+  - a rejecting executor that rejects every program.
+- "Held" needs evidence (ATK-003): an `error` that is not null, or a result with `escaped: false`. The inert executor and the rejecting executor give neither, so the suite must report all eight attacks as breached against them.
 - The canary passed to `attackSandbox` is the value of `env.GITHUB_TOKEN`.
 
 ## 3. The testing entry: `mittens_demo/testing`
@@ -135,4 +137,4 @@ The report. Every key is always present. The runner compares only the keys a cas
 
 ## 5. Adversarial cases with a suite
 
-`input.options.suite` `"attackSandbox"` with `input.options.executor` `"sandbox"`, `"leaky-env"`, `"leaky-base64"` or `"escaped"` runs the whole suite against that executor. The adapter returns `{ error: null, result: { breached: report.breached, breachedNames: <names of the cases whose outcome is "breached"> } }`.
+`input.options.suite` `"attackSandbox"` with `input.options.executor` `"sandbox"`, `"leaky-env"`, `"leaky-base64"`, `"escaped"`, `"inert"` or `"rejecting"` runs the whole suite against that executor. The adapter returns `{ error: null, result: { breached: report.breached, breachedNames: <names of the cases whose outcome is "breached"> } }`.

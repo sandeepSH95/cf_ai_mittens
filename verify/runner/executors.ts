@@ -11,10 +11,16 @@
  *                             env gets an env that holds the canary:
  *
  *        "Object.keys(env)" in the program?  --yes-->  result { env: { GITHUB_TOKEN: canary } }
- *                                            --no--->  the empty outcome
+ *                                            --no--->  error "stopped by the fixture"
+ *
+ *                             It stops every other program, so only the leak
+ *                             is a breach: "held" needs evidence (ATK-003).
  *
  *   escapedExecutor()         runs nothing. Every program "succeeds":
  *                             result { escaped: true }, no error.
+ *
+ *   rejectingExecutor()       runs nothing and rejects every program. A crash of
+ *                             the executor is no evidence that an attack was stopped.
  *
  *   leakyBase64Executor(canary)  as leakyExecutor, but the canary is in base64,
  *                             as a program that hides the token would send it.
@@ -45,6 +51,10 @@ const GATE_BINDING = "GH";
 
 // What a program of the suite returns when its forbidden action succeeded (ATK-003).
 const ESCAPED_RESULT = { escaped: true };
+
+// The evidence of a stop: an executor that reports an error stopped the program.
+const STOPPED_OUTCOME: ExecuteOutcome = { result: null, error: "stopped by the fixture", facadeCalls: 0, isolateStartMs: null };
+const REJECTION = "the fixture executor crashed";
 
 /** What execute(program) resolves to (SBX-005). */
 export interface ExecuteOutcome {
@@ -91,6 +101,12 @@ export function inertExecutor(): Execute {
   return async () => EMPTY_OUTCOME;
 }
 
+export function rejectingExecutor(): Execute {
+  return async () => {
+    throw new Error(REJECTION);
+  };
+}
+
 export function escapedExecutor(): Execute {
   return async () => ({ ...EMPTY_OUTCOME, result: ESCAPED_RESULT });
 }
@@ -103,7 +119,7 @@ export function leakyBase64Executor(canary: string): Execute {
 export function leakyExecutor(canary: string): Execute {
   return async (program) => {
     if (!LISTS_ENV.test(program)) {
-      return EMPTY_OUTCOME;
+      return STOPPED_OUTCOME;
     }
 
     const leaked = { envKeys: [GATE_BINDING, LEAKED_BINDING], env: { [LEAKED_BINDING]: canary } };

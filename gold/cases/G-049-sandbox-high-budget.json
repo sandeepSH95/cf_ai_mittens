@@ -1,0 +1,18 @@
+{
+  "id": "G-049",
+  "covers": [
+    "SBX-004"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-26",
+  "input": {
+    "call": "sandbox.createSandbox.badOption",
+    "args": {
+      "tickBudget": 100000001
+    }
+  },
+  "expected": {
+    "throws": "TypeError",
+    "message": "createSandbox: 'tickBudget' must be at most 10000000"
+  }
+}
