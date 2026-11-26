@@ -124,7 +124,7 @@ The held-out cases are kept outside this repository, so that no builder pass can
 - The demo has no login and one shared chat. That is acceptable only because it is not hosted. Put any deployment behind a login.
 - An approval is not signed for one plan. The approving human's own browser could swap the plan. The model and its program cannot.
 
-Details and the other entries are in the [known issues](docs/KNOWN_ISSUES.md).
+Details and the other entries are in the [known issues](docs/KNOWN_ISSUES.md). Work that was not started, such as a comparison with other designs, is in the [open work](docs/TODO.md).
 
 ## The parts
 
@@ -213,6 +213,7 @@ The flag selects the live model. Without it the deployed Worker uses the stub mo
 | `prompts/` | The prompt record and the briefs given to subagents |
 | `docs/PLAN.md` | The build plan, step by step |
 | `docs/KNOWN_ISSUES.md` | What the first version accepts, and what is open |
+| `docs/TODO.md` | Work that was not started: what was never run, tests that do not exist, the comparison that is not made |
 
 ## What is and is not new
 
