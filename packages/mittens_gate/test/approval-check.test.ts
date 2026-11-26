@@ -10,7 +10,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createAgentTools, defineWrites, ToolName, type Executor } from "../src/index";
+import type { Executor } from "@cloudflare/codemode";
+import { createAgentTools, defineWrites, ToolName } from "../src/index";
 
 const MAX_WRITES = 2;
 const MAX_COMMENT_LENGTH = 10;
