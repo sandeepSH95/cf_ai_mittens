@@ -10,13 +10,17 @@
  *
  * Only the open tab is mounted. So the chat opens its connection to the
  * agent when a person opens the Chat tab, and the attack tab needs no agent.
+ * The chat's code is a separate chunk that loads on the first open of that
+ * tab: the attack tab, the default, does not pay for the agent libraries.
  */
-import { MessageSquare, ShieldCheck } from "lucide-react";
+import { Loader2, MessageSquare, ShieldCheck } from "lucide-react";
+import { lazy, Suspense } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AttackTab } from "./attack/AttackTab";
-import { ChatTab } from "./chat/ChatTab";
+
+const ChatTab = lazy(async () => ({ default: (await import("./chat/ChatTab")).ChatTab }));
 
 const PageTab = {
   Attack: "attack",
@@ -48,9 +52,20 @@ export function App() {
         </TabsContent>
 
         <TabsContent value={PageTab.Chat}>
-          <ChatTab />
+          <Suspense fallback={<ChatLoading />}>
+            <ChatTab />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+function ChatLoading() {
+  return (
+    <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+      Loading the chat
+    </p>
   );
 }

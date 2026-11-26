@@ -6,7 +6,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 
 import type { AttackRun } from "../../services/attack-run";
 import { AttackRowView, pendingLabel } from "./AttackRow";
-import { ATTACK_COUNT, Outcome, PENDING_ATTACKS, RunPhase, type DisplayRow } from "./constants";
+import { ATTACK_COUNT, Outcome, PENDING_ATTACKS, RunPhase, WIDE_ONLY_CELL, type DisplayRow } from "./constants";
 
 const NO_BREACH = 0;
 
@@ -42,8 +42,9 @@ type AttackCardProps = {
 export function AttackCard({ title, description, role, expectedBreaches, expectedReason, run, phase }: AttackCardProps) {
   const rows = toDisplayRows(run);
 
+  // min-w-0: a grid item may get narrower than its table. At phone width the table scrolls and the card stays on the screen.
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           <h3>{title}</h3>
@@ -67,8 +68,8 @@ export function AttackCard({ title, description, role, expectedBreaches, expecte
           <TableHeader>
             <TableRow>
               <TableHead scope="col" className="w-full">Attack</TableHead>
-              <TableHead scope="col">Criterion</TableHead>
-              <TableHead scope="col">Expected</TableHead>
+              <TableHead scope="col" className={WIDE_ONLY_CELL}>Criterion</TableHead>
+              <TableHead scope="col" className={WIDE_ONLY_CELL}>Expected</TableHead>
               <TableHead scope="col">Outcome</TableHead>
             </TableRow>
           </TableHeader>

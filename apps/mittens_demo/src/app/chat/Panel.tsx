@@ -9,7 +9,7 @@ export function Panel({ state }: { state: CoderState | undefined }) {
   const row = state?.lastLedger ?? null;
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit min-w-0">
       <CardHeader>
         <CardTitle>
           <h2>Last program</h2>

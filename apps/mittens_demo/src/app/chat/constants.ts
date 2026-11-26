@@ -12,3 +12,17 @@ export const EXAMPLE_PROMPT = "List my open pull requests older than 30 days and
 
 /** Sends the human's answer to an approval request. Example: { id: "a1", approved: false } rejects the plan. */
 export type ApprovalHandler = (response: { id: string; approved: boolean }) => void;
+
+/** The state of the WebSocket to the agent, as the chat tab shows it. */
+export const Connection = {
+  // The socket is opening, or it closed and the client is trying again.
+  Connecting: "connecting",
+
+  // The agent answered and named itself.
+  Connected: "connected",
+
+  // The socket closed with a final code. The client does not try again.
+  Failed: "failed"
+} as const;
+
+export type Connection = (typeof Connection)[keyof typeof Connection];

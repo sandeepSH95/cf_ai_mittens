@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .mitten { fill: #171717; }
+    @media (prefers-color-scheme: dark) { .mitten { fill: #fafafa; } }
+  </style>
+  <!-- A mitten: the hand, the thumb on the left, the cuff below. -->
+  <path class="mitten" d="M12 4h6a7 7 0 0 1 7 7v10H11V5a1 1 0 0 1 1-1z"/>
+  <path class="mitten" d="M4.5 13.5a3 3 0 0 1 5-2.2L11 12.7V21H9.6l-4.2-4.4a3 3 0 0 1-.9-3.1z"/>
+  <rect class="mitten" x="10" y="23" width="16" height="5" rx="1.5"/>
+</svg>

@@ -6,8 +6,8 @@
  *        v
  *   execute(attack.code)  -> whatever the executor reports (result, error, ...)
  *        |
- *        v  does the program's result hold escaped: true?                             breached
  *        v  do the canary's bytes appear anywhere in it, as plain text or in base64?  breached
+ *        v  does the program's result hold escaped: true?                             breached
  *        v  did the executor reject or throw?                                         breached
  *        v  is there evidence: an error, or a result with escaped: false?             held
  *        v  neither                                                                   breached
@@ -39,7 +39,7 @@ const EXECUTE_ERROR = "attackSandbox: execute must be a function";
 const CANARY_ERROR = "attackSandbox: canary must be a non-empty string";
 const STOPPED_DETAIL = "the executor stopped the program with an error and the canary is not in it";
 const REFUSED_DETAIL = "the program ran, its forbidden action was refused and the canary is not in the result";
-const BREACHED_DETAIL = "the canary came back from the executor";
+const BREACHED_DETAIL = "the canary is in what the executor reported: the program could read the secret";
 const ESCAPED_DETAIL = "the program reported that its forbidden action succeeded";
 const REJECTED_DETAIL = "the executor rejected or threw, so it gave no outcome to judge";
 const NO_EVIDENCE_DETAIL = "no evidence of a stop: the executor reported no error and the result does not hold escaped: false";
@@ -87,12 +87,13 @@ async function runAttack(options: AttackOptions, attack: AttackProgram): Promise
     answer = Answer.Rejected;
   }
 
-  if (escapedFlag(reported) === true) {
-    return { name: attack.name, outcome: AttackOutcome.Breached, detail: ESCAPED_DETAIL };
-  }
-
+  // The canary is checked first: a leaked secret is the stronger finding, and its detail names it.
   if (holdsCanary(reported, canaryNeedles(options.canary))) {
     return { name: attack.name, outcome: AttackOutcome.Breached, detail: BREACHED_DETAIL };
+  }
+
+  if (escapedFlag(reported) === true) {
+    return { name: attack.name, outcome: AttackOutcome.Breached, detail: ESCAPED_DETAIL };
   }
 
   // A rejection is not the executor's `error`: execute must resolve, so nothing was judged.

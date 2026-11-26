@@ -59,6 +59,13 @@ export const EXPECTED_BREACHES = {
   naive: ["env inspection"]
 } as const satisfies Record<string, readonly string[]>;
 
+/**
+ * The two reference columns (Criterion, Expected) show from 640 px. Below
+ * that only the name and the outcome fit on the screen, and the note above
+ * the table already states the expected result.
+ */
+export const WIDE_ONLY_CELL = "hidden sm:table-cell";
+
 export const NOT_RUN_LABEL = "not run";
 export const RUNNING_LABEL = "running";
 export const FAILED_LABEL = "no report";

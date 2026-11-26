@@ -17,6 +17,7 @@ const ORIGIN = "http://mittens.test";
 const HTTP_OK = 200;
 const HTTP_NOT_FOUND = 404;
 const LEAKING_ATTACK = "env inspection";
+const SECRET_READ_DETAIL = "the canary is in what the executor reported: the program could read the secret";
 
 type WorkerFetcher = { fetch(request: Request): Promise<Response> };
 
@@ -45,6 +46,13 @@ describe("the attack page's API", () => {
 
     expect(breached).toEqual([LEAKING_ATTACK]);
     expect(run.breached).toBe(1);
+  });
+
+  it("says in the breach's detail that the program could read the secret", async () => {
+    const run = await attack("naive");
+    const leak = run.cases.find((row) => row.name === LEAKING_ATTACK);
+
+    expect(leak?.detail).toBe(SECRET_READ_DETAIL);
   });
 
   it("sends each attack's program and criterion, and never the canary", async () => {

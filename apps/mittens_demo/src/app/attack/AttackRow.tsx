@@ -5,7 +5,9 @@ import { CodeBlock } from "@/components/code-block";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 
-import { FAILED_LABEL, NOT_RUN_LABEL, Outcome, RUNNING_LABEL, RunPhase, type DisplayRow } from "./constants";
+import { cn } from "@/lib/utils";
+
+import { FAILED_LABEL, NOT_RUN_LABEL, Outcome, RUNNING_LABEL, RunPhase, WIDE_ONLY_CELL, type DisplayRow } from "./constants";
 
 /** The table has four columns. The source row spans all of them. */
 export const ATTACK_COLUMNS = 4;
@@ -46,10 +48,10 @@ export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase
           {row.detail.length > 0 ? <p className="mt-1 pl-5 text-xs whitespace-normal text-muted-foreground">{row.detail}</p> : null}
         </TableCell>
 
-        <TableCell className="font-mono text-xs text-muted-foreground">{row.criterion}</TableCell>
+        <TableCell className={cn(WIDE_ONLY_CELL, "font-mono text-xs text-muted-foreground")}>{row.criterion}</TableCell>
 
         {/* Plain text, not a badge: the expected verdict is a reference, the outcome is the result. */}
-        <TableCell className="text-xs text-muted-foreground">{expected}</TableCell>
+        <TableCell className={cn(WIDE_ONLY_CELL, "text-xs text-muted-foreground")}>{expected}</TableCell>
 
         <TableCell>
           <OutcomeBadge outcome={row.outcome} phase={phase} />
