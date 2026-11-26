@@ -6,7 +6,7 @@
     "APP-003"
   ],
   "kind": "exact",
-  "verified": "by agent, 2026-11-25",
+  "verified": "by agent, 2026-11-26",
   "input": {
     "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
     "fixtures": "fixtures/repo-small.json",
@@ -153,6 +153,7 @@
         "number": 106,
         "body": "This pull request has had no activity for more than 30 days (last comment by nobody). Please rebase it or close it."
       }
-    ]
+    ],
+    "approval_asked": true
   }
 }

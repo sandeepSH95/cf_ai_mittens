@@ -23,7 +23,7 @@
  */
 
 import type { Json, JsonObject } from "../normalise.ts";
-import { leakyExecutor, sandboxExecutor } from "./executors.ts";
+import { escapedExecutor, leakyBase64Executor, leakyExecutor, sandboxExecutor } from "./executors.ts";
 import type { Execute } from "./executors.ts";
 import {
   ContractError,
@@ -74,6 +74,8 @@ const SCRIPT_REPORT_SHAPE = "runScriptedCase(input) must resolve to a report obj
 const SUITE_EXECUTORS: Readonly<Record<string, (canary: string) => Promise<Execute>>> = {
   sandbox: () => sandboxExecutor({ tickBudget: SUITE_TICK_BUDGET, timeoutMs: SUITE_TIMEOUT_MS }),
   "leaky-env": async (canary) => leakyExecutor(canary),
+  "leaky-base64": async (canary) => leakyBase64Executor(canary),
+  escaped: async () => escapedExecutor(),
 };
 
 const KIND_RUNNERS: Readonly<Record<string, KindRunner>> = {

@@ -26,6 +26,7 @@
   "expected": {
     "refusal": "Plan refused: write kind 'delete_branch' is not allowed",
     "apply_outcome": null,
-    "stub_writes": []
+    "stub_writes": [],
+    "approval_asked": false
   }
 }

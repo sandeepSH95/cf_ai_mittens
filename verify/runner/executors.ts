@@ -13,7 +13,13 @@
  *        "Object.keys(env)" in the program?  --yes-->  result { env: { GITHUB_TOKEN: canary } }
  *                                            --no--->  the empty outcome
  *
- * The two fixture executors never run a program on purpose: a runaway loop
+ *   escapedExecutor()         runs nothing. Every program "succeeds":
+ *                             result { escaped: true }, no error.
+ *
+ *   leakyBase64Executor(canary)  as leakyExecutor, but the canary is in base64,
+ *                             as a program that hides the token would send it.
+ *
+ * The fixture executors never run a program on purpose: a runaway loop
  * with no tick budget blocks local workerd (PLAN.md section 11).
  */
 
@@ -36,6 +42,9 @@ const SANDBOX_SHAPE = "createSandbox(options) must return { execute(program) }";
 const LISTS_ENV = /Object\s*\.\s*(keys|values|entries)\s*\(\s*env\b/;
 const LEAKED_BINDING = "GITHUB_TOKEN";
 const GATE_BINDING = "GH";
+
+// What a program of the suite returns when its forbidden action succeeded (ATK-003).
+const ESCAPED_RESULT = { escaped: true };
 
 /** What execute(program) resolves to (SBX-005). */
 export interface ExecuteOutcome {
@@ -80,6 +89,15 @@ export async function sandboxExecutor(options: JsonObject): Promise<Execute> {
 
 export function inertExecutor(): Execute {
   return async () => EMPTY_OUTCOME;
+}
+
+export function escapedExecutor(): Execute {
+  return async () => ({ ...EMPTY_OUTCOME, result: ESCAPED_RESULT });
+}
+
+/** Example: the canary "ghp_x" leaves as "Z2hwX3g=". */
+export function leakyBase64Executor(canary: string): Execute {
+  return leakyExecutor(btoa(canary));
 }
 
 export function leakyExecutor(canary: string): Execute {

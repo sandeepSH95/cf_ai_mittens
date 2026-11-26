@@ -1,0 +1,37 @@
+{
+  "id": "G-047",
+  "covers": [
+    "APP-003"
+  ],
+  "kind": "exact",
+  "verified": "by agent, 2026-11-26",
+  "input": {
+    "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
+    "fixtures": "fixtures/repo-small.json",
+    "model_script": [
+      {
+        "tool": "code",
+        "program": "fixtures/programs/read-raw-handle.js"
+      },
+      {
+        "text": "done"
+      }
+    ],
+    "now": "2026-11-01T00:00:00.000Z"
+  },
+  "expected": {
+    "program_result": {
+      "open": 7
+    },
+    "ledger": {
+      "facade_calls": 1,
+      "round_trips": 1,
+      "error": null,
+      "isolate_start_ms": {
+        "min": 0,
+        "max": 5000
+      }
+    },
+    "driver_calls": 1
+  }
+}

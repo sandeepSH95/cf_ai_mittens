@@ -40,7 +40,9 @@ Details the adapter depends on:
 - `attackSandbox` calls `execute(program)` and nothing else on the executor. The adapter passes three executors:
   - the real sandbox, built with `tickBudget` 10000 and `timeoutMs` 500;
   - an inert executor that runs nothing and resolves to `{ result: null, error: null, facadeCalls: 0, isolateStartMs: null }` (used to read the report's shape and the attack names);
-  - a leaky executor that runs nothing. When the program text matches `Object.keys(env`, `Object.values(env` or `Object.entries(env`, it resolves with `result: { envKeys: ["GH", "GITHUB_TOKEN"], env: { GITHUB_TOKEN: <canary> } }`. For every other program it is inert. So the env inspection attack must list env that way, and no other attack may.
+  - a leaky executor that runs nothing. When the program text matches `Object.keys(env`, `Object.values(env` or `Object.entries(env`, it resolves with `result: { envKeys: ["GH", "GITHUB_TOKEN"], env: { GITHUB_TOKEN: <canary> } }`. For every other program it is inert. So the env inspection attack must list env that way, and no other attack may;
+  - a leaky base64 executor: the same, with the canary in base64 (`btoa(canary)`);
+  - an escaped executor that runs nothing and resolves every program with `result: { escaped: true }` and `error: null`. Each of the eight attacks must then be reported as breached.
 - The canary passed to `attackSandbox` is the value of `env.GITHUB_TOKEN`.
 
 ## 3. The testing entry: `mittens_demo/testing`
@@ -99,6 +101,7 @@ The report. Every key is always present. The runner compares only the keys a cas
 | `apply_outcome` | `{ applied: <count>, failed: <count> }` after an approved plan ran, else null | GATE-002, GATE-003 |
 | `stub_writes` | the writes the GitHub stub received, in order, each in the shape of a plan write (`{ kind, number, body? }`) | GATE-002, GATE-003 |
 | `refusal` | the message of the plan validation when it refused the plan, else null | GATE-003 |
+| `approval_asked` | true when `apply_writes` asked the human for approval in this turn, else false. A refused plan must not ask | GATE-002, GATE-003 |
 | `model_received` | the `output.type` of the `apply_writes` tool result in the last prompt the model received (`"execution-denied"` after a reject), or null when there is none | GATE-002 |
 | `driver_calls` | the number of read calls that reached the GitHub stub | GATE-004 |
 | `agent_state` | `{ last_program, last_ledger, runs }` from the agent's state after the turn: the last program text, its ledger row in the shape of `ledger`, and the number of program runs | APP-005 |
@@ -124,6 +127,7 @@ The report. Every key is always present. The runner compares only the keys a cas
 | `attack.missingExecute` | `attackSandbox(args)`, the thrown error |
 | `app.toolNames` | `agentParts().toolNames`, sorted |
 | `app.stepLimit` | `agentParts().stepLimit` |
+| `app.runsInOneTurn` | `runScriptedCase` with a script of `args.code_steps` `code` steps of `args.program`, no approval; then `agent_state.runs` |
 | `app.stateAfterStaleFlow` | `runScriptedCase` with the script code, `apply_writes`, text, and approval `approve`; then `{ last_program_is_script_program, last_ledger_facade_calls, runs }` from `agent_state` |
 | `harness.noCases` | computed in Node by `verify/runner/harness.ts`: the verifier on a temporary repository with the real criteria and no cases |
 | `harness.fenceByte` | computed in Node: the verifier on a temporary repository with one signed case and one byte added to it |
@@ -131,4 +135,4 @@ The report. Every key is always present. The runner compares only the keys a cas
 
 ## 5. Adversarial cases with a suite
 
-`input.options.suite` `"attackSandbox"` with `input.options.executor` `"sandbox"` or `"leaky-env"` runs the whole suite against that executor. The adapter returns `{ error: null, result: { breached: report.breached, breachedNames: <names of the cases whose outcome is "breached"> } }`.
+`input.options.suite` `"attackSandbox"` with `input.options.executor` `"sandbox"`, `"leaky-env"`, `"leaky-base64"` or `"escaped"` runs the whole suite against that executor. The adapter returns `{ error: null, result: { breached: report.breached, breachedNames: <names of the cases whose outcome is "breached"> } }`.

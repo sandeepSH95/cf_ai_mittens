@@ -77,6 +77,7 @@ const READ_PLACEHOLDER = { input: {}, output: {}, handler: async () => null };
 // The stale flow of APP-005: one program, the approved plan, the last answer.
 const STALE_FLOW_MESSAGE = "Close my stale pull requests";
 const STALE_FLOW_LAST_TEXT = "done";
+const LONG_TURN_MESSAGE = "Run the program again";
 const CODE_TOOL = "code";
 const APPLY_TOOL = "apply_writes";
 const APPROVE = "approve";
@@ -175,6 +176,24 @@ export const REGISTRY: Readonly<Record<string, ContractCall>> = {
       last_ledger_facade_calls: toJson(lastLedger.facade_calls, "facade_calls"),
       runs: toJson(state.runs, "runs"),
     };
+  },
+
+  // APP-004 measured: a model that asks for more programs than the limit allows.
+  "app.runsInOneTurn": async (args, context) => {
+    const program = fileText(context.files, args.program);
+    const runScriptedCase = await loadExport(Exports.runScriptedCase);
+    const input = {
+      agentName: context.agentName,
+      fixture: fileText(context.files, args.fixtures),
+      now: null,
+      userMessage: LONG_TURN_MESSAGE,
+      script: Array.from({ length: Number(args.code_steps) }, () => ({ tool: CODE_TOOL, program })),
+      approval: null,
+    };
+    const report = await guarded("runScriptedCase(input)", () => runScriptedCase(input));
+    const state = expectObject(expectObject(report, STATE_SHAPE).agent_state, STATE_SHAPE);
+
+    return toJson(state.runs, "runs");
   },
 
   "harness.noCases": harnessFact,

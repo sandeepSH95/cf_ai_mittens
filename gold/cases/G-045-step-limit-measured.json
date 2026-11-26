@@ -1,0 +1,17 @@
+{
+  "id": "G-045",
+  "covers": [
+    "APP-004"
+  ],
+  "kind": "contract",
+  "verified": "by agent, 2026-11-26",
+  "input": {
+    "call": "app.runsInOneTurn",
+    "args": {
+      "program": "fixtures/programs/no-reads.js",
+      "fixtures": "fixtures/repo-small.json",
+      "code_steps": 10
+    }
+  },
+  "expected": 6
+}

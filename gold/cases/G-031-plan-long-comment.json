@@ -4,7 +4,7 @@
     "GATE-003"
   ],
   "kind": "exact",
-  "verified": "by agent, 2026-11-25",
+  "verified": "by agent, 2026-11-26",
   "input": {
     "user_message": "Close my stale pull requests (stale as of 2026-11-01)",
     "fixtures": "fixtures/repo-small.json",
@@ -26,6 +26,7 @@
   "expected": {
     "refusal": "Plan refused: a comment has 4001 characters, the limit is 4000",
     "apply_outcome": null,
-    "stub_writes": []
+    "stub_writes": [],
+    "approval_asked": false
   }
 }
