@@ -10,7 +10,7 @@ Every quote marked **[exact]** is a prompt the author typed, copied from [prompt
 | --- | --- |
 | Which tool and model? | Claude Code. Model `claude-fable-5-1` until 25 November 2026, `claude-fable-5-2` after. |
 | Who typed the prompts? | The author. One long prompt of 23 November is a handover note that an agent drafted and the author pasted. It is marked in the log. |
-| Is the prompt log complete? | No. The author chose which prompts to publish. Prompts that were not about the build are left out. No published prompt was altered. |
+| Is the prompt log complete? | No. The author chose which prompts to publish. Prompts that were not about the build are left out. No published prompt was altered, with these exceptions of 26 November: four words of one pasted handover note, and three passages of the prototype's record in the lineage file, are withdrawn. Each place is marked "Not published". Absolute paths in the briefs are shortened to `<repo>`. |
 | Who recorded the prompts? | The agent, at the start of each turn. A hook did this in a first version of the repository. The hook only fired in sessions started inside the repository folder, so that version was dropped on 25 November and its entries were carried over. |
 | Who wrote the code? | Agents wrote all of it. The author made the decisions quoted below and approved the gold set. |
 | Who wrote the expected values of the gold cases? | An agent derived them. The author compared the 11 exact cases of the first set with the output of a derivation script and approved the set. Later cases were proposed by the agent in tables and approved by the author before signing. Every case carries the line `"verified": "by agent, <date>"`. |
