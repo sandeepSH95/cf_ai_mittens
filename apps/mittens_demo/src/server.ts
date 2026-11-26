@@ -90,7 +90,11 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
     return result.toUIMessageStreamResponse({ onError: errorText });
   }
 
-  /** Called by GitHubGate over RPC, once per read, so the count is made on the host. Example: countGateCall("r-1"). */
+  /**
+   * Called by GitHubGate over RPC, once per read, so the count is made on the host. Example: countGateCall("r-1").
+   * Public only because Durable Object RPC needs it. Host-only: never mark it @callable, or a browser
+   * client could write its own count. test/client-reach.test.ts fails if a client can reach it.
+   */
   countGateCall(runId: string): void {
     this.#meter?.count(runId);
   }

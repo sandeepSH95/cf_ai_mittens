@@ -149,3 +149,7 @@ The extra RPC is acceptable for our first version. Log the sanbox issue for futu
 ## 2026-11-26T14:22:10Z, session dfdda72e, HEAD 1722757
 
 provide details of the contGateCall decision
+
+## 2026-11-26T14:23:35Z, session dfdda72e, HEAD c8e92d9
+
+go with A, however we need to have verification on how a browser client may call it

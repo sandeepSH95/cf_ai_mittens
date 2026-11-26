@@ -30,4 +30,8 @@ To investigate:
 
 Logged 26 November 2026. Status: accepted for the first version.
 
-Each read through the gate makes one more RPC, from the gate to the agent, to report the call. A read whose count fails does not run. The author accepted this cost for the first version. A later version can count in a batch, or count in the gate and report once per run.
+Each read through the gate makes two more RPCs to report the call: the lookup of the agent by name, then `CoderAgent.countGateCall`. (The first note said one; the second review counted two.) The author accepted the cost for the first version. A later version can count in a batch, or count in the gate and report once per run.
+
+`countGateCall` is a public method, because Durable Object RPC cannot call a private one. The author approved it on 26 November 2026 on one condition: proof that a browser client cannot call it. `apps/mittens_demo/test/client-reach.test.ts` is that proof. It sends the client's RPC frame over a real WebSocket and expects the SDK's refusal, and it fails when the method is marked `@callable`.
+
+A read whose count call throws does not run. Three paths still let a read run with no count: a gate handle with no scope, an agent with no meter, and a run id that does not match. The demo's live path always sets all three.
