@@ -108,7 +108,7 @@ function checkWrite(kinds: Record<string, WriteEntry>, limits: WriteLimits, writ
 
   // Object.hasOwn: a kind such as "constructor" must not find a member of the prototype.
   if (typeof kind !== "string" || !Object.hasOwn(kinds, kind)) {
-    throw new PlanRefusal(`'${String(kind)}' is not a write kind`);
+    throw new PlanRefusal(`write kind '${String(kind)}' is not allowed`);
   }
 
   const body = (write as { body?: unknown }).body;

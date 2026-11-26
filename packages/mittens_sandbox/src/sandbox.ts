@@ -179,7 +179,7 @@ function checkOptions(options: SandboxOptions): Limits {
     const value = given[key];
 
     if (value !== undefined && !(typeof value === "number" && Number.isFinite(value) && value > 0)) {
-      throw new TypeError(`${ERROR_PREFIX} option '${key}' must be a positive number`);
+      throw new TypeError(`${ERROR_PREFIX} '${key}' must be a positive number`);
     }
   }
 

@@ -113,7 +113,7 @@ describe("defineWrites", () => {
   });
 
   it("refuses a kind that is not in the map, also a name from the prototype", () => {
-    expect(() => writes([]).validatePlan({ writes: [{ kind: "merge", number: 1 }] })).toThrow("Plan refused: 'merge' is not a write kind");
+    expect(() => writes([]).validatePlan({ writes: [{ kind: "merge", number: 1 }] })).toThrow("Plan refused: write kind 'merge' is not allowed");
     expect(() => writes([]).validatePlan({ writes: [{ kind: "constructor" }] })).toThrow(PlanRefusal);
   });
 
