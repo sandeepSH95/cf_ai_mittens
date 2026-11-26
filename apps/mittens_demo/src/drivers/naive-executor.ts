@@ -5,10 +5,12 @@
  *   env: { GH: gate }                   env: { GH: gate, GITHUB_TOKEN: <token> }
  *
  * It runs a program in a Dynamic Worker with the same loop budget, the same
- * timeout and no network, like the real sandbox. The one difference is the
- * common shortcut: the API token is handed to the isolate in its env. The
- * attack page runs the same eight attacks against both, so the difference in
- * the report comes from that one line.
+ * timeout and no network, like the real sandbox. The difference that matters
+ * is the common shortcut: the API token is handed to the isolate in its env.
+ * The attack page runs the same eight attacks against both, and the one
+ * breach in the report comes from that token. It is a smaller executor in
+ * other ways too (no `github` proxy, no call count, no CPU limit): none of
+ * those changes the verdict of an attack.
  *
  * Only the attack page uses this file, and only with the canary, which is not
  * a real token. The agent never runs a program here.
@@ -89,9 +91,16 @@ async function runWithToken(loader: WorkerLoader, gate: Fetcher, token: string, 
 
   const entrypoint = worker.getEntrypoint() as unknown as NaiveEntrypoint;
 
-  return Promise.race([entrypoint.run(limits), hostTimeout(limits.timeoutMs + HOST_GRACE_MS)]);
-}
+  // The host's own timer, for a run that never answers. It is cancelled when the run ends first.
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
-function hostTimeout(ms: number): Promise<never> {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error(TIMEOUT_ERROR_MESSAGE)), ms));
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(TIMEOUT_ERROR_MESSAGE)), limits.timeoutMs + HOST_GRACE_MS);
+  });
+
+  try {
+    return await Promise.race([entrypoint.run(limits), expired]);
+  } finally {
+    clearTimeout(timer);
+  }
 }

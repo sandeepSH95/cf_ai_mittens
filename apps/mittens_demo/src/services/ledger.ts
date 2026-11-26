@@ -21,6 +21,7 @@ export type ProgramRun = SandboxOutcome & { code: string; durationMs: number };
 export const ROUND_TRIPS_PER_PROGRAM = 1;
 const DEFAULT_LIST_LIMIT = 20;
 const MAX_RESULT_CHARS = 4000;
+const UNSERIALIZABLE_RESULT = "\"[the result cannot be written as JSON]\"";
 
 export type LedgerRow = {
   id: number;
@@ -110,8 +111,18 @@ function truncateJson(value: unknown): string | null {
     return null;
   }
 
-  const json = JSON.stringify(value) ?? "null";
+  const json = toJson(value);
   return json.length > MAX_RESULT_CHARS ? `${json.slice(0, MAX_RESULT_CHARS)}...` : json;
+}
+
+// JSON has no BigInt, and a BigInt can cross Workers RPC. Example: { big: 10n } is stored as {"big":"10n"}.
+// A value that still cannot be written (a cycle) is stored as a fixed text, so the run is recorded in every case.
+function toJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, (_key, part) => (typeof part === "bigint" ? `${part}n` : part)) ?? "null";
+  } catch {
+    return UNSERIALIZABLE_RESULT;
+  }
 }
 
 function toRow(record: Record<string, SqlStorageValue>): LedgerRow {

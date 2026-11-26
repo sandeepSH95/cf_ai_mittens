@@ -2,9 +2,11 @@
 
 Mittens for AI agents: read anything, touch nothing, ask before you write.
 
+Mittens is a chat agent on Cloudflare Workers. For each task the model writes one JavaScript program. The program runs in a Dynamic Worker (a fresh isolate that the host Worker starts for it) with no network and no secret. It can read a GitHub repository through a typed, read-only gate on the host. It cannot write: a write comes back as a plan, and a human approves the plan or rejects it.
+
 ## What it does, shown first
 
-Eight attack programs run against two executors. The two executors differ in one line: the second one has the API token in the isolate's environment.
+Eight attack programs run against two executors. An executor is the part that runs a model-written program. The two differ in one thing: the second one has the API token in the isolate's environment.
 
 | Attack | Mittens sandbox | Naive executor (token in env) |
 | --- | --- | --- |
@@ -18,7 +20,7 @@ Eight attack programs run against two executors. The two executors differ in one
 | never-resolving promise | held | held |
 | **Result** | **0 of 8 breached** | **1 of 8 breached** |
 
-This is the output of the demo's attack page (`GET /api/attacks/mittens` and `GET /api/attacks/naive`). Every attack runs for real in a Dynamic Worker. The token is a canary, not a real token.
+This is the output of the demo's attack page (`GET /api/attacks/mittens` and `GET /api/attacks/naive`). Every attack runs for real in a Dynamic Worker. The token is a canary: a fake token whose only job is to be found if it leaks.
 
 Run it yourself, with no account and no token:
 
@@ -70,7 +72,7 @@ A write leaves the program as data: a plan. The host validates the plan (allowed
 
 ![The loop took the gold set from 3 to 48 passing cases in 6 passes](docs/ledger-chart.svg)
 
-An agent built the packages in a loop. A deterministic verifier judged every pass against a gold set of expected outputs. The agent could not edit the gold set, the criteria or the verifier: hooks refuse the edit, and a hash manifest fails the run if a fenced byte changes.
+An agent built the packages in a loop. A deterministic verifier judged every pass against a gold set of expected outputs. In a pass, the builder agent could not edit the gold set, the criteria or the verifier: hooks refuse the edit, and a hash manifest fails the run if a fenced byte changes. Those three were written outside the passes, in interactive sessions: an agent drafted them, and the author approved each set before it was signed.
 
 ```mermaid
 flowchart LR
@@ -112,11 +114,14 @@ A green verifier proves the cases, not the intent. Three more checks ran after i
 
 Every gap that weakened a criterion became a gold case first and a fix second. What is not fixed is written down: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
 
+The held-out cases are kept outside this repository, so that no builder pass can read them. A reader cannot run them again: the two held-out scores are the author's report, and the review findings are in the commit bodies.
+
 ## Limits, stated plainly
 
 - The attack suite requires evidence that an attack was stopped. It cannot prove the stop. An executor that lies in its report is reported as "held".
 - The tick budget counts loops and function calls. Work inside one built-in call has no tick. In production the CPU limit stops it. Local workerd does not enforce that limit.
 - The demo's ledger counts gate calls on the host. The sandbox package alone still reports a count from inside the isolate.
+- The demo has no login and one shared chat. That is acceptable only because it is not hosted. Put any deployment behind a login.
 - An approval is not signed for one plan. The approving human's own browser could swap the plan. The model and its program cannot.
 
 Details and the other entries are in the [known issues](docs/KNOWN_ISSUES.md).
@@ -161,7 +166,7 @@ Drivers are chosen by variables, and both default to stubs:
 | Typecheck | `npm run typecheck` |
 | The verifier | `sh verify/run.sh` |
 | Self-tests of the verifier, the loop and the hooks | `npm run test:verify` |
-| Redraw the chart from the ledger | `node tools/ledger-chart.mjs` |
+| Redraw the chart (the points come from the ledger, the three notes from the script) | `node tools/ledger-chart.mjs` |
 | The live-model check (G-039), against a running demo | `node tools/live-check.mjs <base-url>` |
 
 Node 24 or later is required: the verifier runs TypeScript directly.

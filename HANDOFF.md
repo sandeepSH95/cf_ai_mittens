@@ -1,5 +1,7 @@
 # HANDOFF
 
+This is the note that builder pass 6, the last pass of the loop, left for the next reader. It is kept as written. Its counts and its next steps describe that moment. Later work is in `git log` and in `docs/KNOWN_ISSUES.md`.
+
 Pass of 2026-11-26 (sixth). Verifier: exit 1 -> 0, cases 46/49 -> 48/49 (G-039 skipped, 0 fail). `npm test`: 76 pass (20 gate, 56 demo).
 
 ## What changed

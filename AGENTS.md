@@ -4,7 +4,7 @@ Mittens for AI agents: read anything, touch nothing, ask before you write.
 
 A chat agent on Cloudflare where the model writes one JavaScript program per task. The program runs in a Dynamic Worker with no network and no secret. Reads cross a typed, read-only gate. Writes come back as a plan that a human approves.
 
-The current step and the full design are in `docs/PLAN.md`. Read it before you start.
+The design is in the README. `docs/PLAN.md` is the build plan as it was first written: read it for the reasoning, and trust the code where they differ.
 
 ## How the work is judged
 
@@ -35,7 +35,7 @@ criteria/*.md --> gold/cases/*.json --> sh verify/run.sh --> exit code
 | Lint one gold case draft | `node verify/lint-case.ts gold/drafts/G-050.json` |
 | One loop run (human, or the interactive agent on the human's word; never a builder pass) | `sh loop/loop.sh` |
 | Record a pass by hand (human) | `sh loop/record.sh <pass> <exit-code>` |
-| Held-out run (human, or the interactive agent on the human's word; never a builder pass) | `GOLD_DIR=../mittens_holdout sh verify/run.sh; sh verify/run.sh` |
+| Held-out run (human, or the interactive agent on the human's word; never a builder pass) | `GOLD_DIR=../mittens_holdout sh verify/run.sh; sh verify/run.sh` (needs the held-out set, which is not in the repository) |
 | Demo, offline | `npm run build -w apps/mittens_demo && npm run dev -w apps/mittens_demo` |
 
 ## Layout
@@ -83,7 +83,7 @@ Use the template in `.gitmessage`. Subject in the imperative, 50 characters, cap
 
 - Local workerd does not enforce `limits.cpuMs`. A `while (true) {}` in a Dynamic Worker blocks the local runtime. The tick budget in `mittens_sandbox` exists for this.
 - A bare `RpcTarget` cannot go in a Dynamic Worker `env`. A loopback handle from `ctx.exports` can.
-- An `ai` binding makes `wrangler dev` open a remote session. Keep it in `env.production`, or use `wrangler dev --local`.
+- An `ai` binding makes `wrangler dev` open a remote session. `npm run dev` passes `--local` for that reason: the demo then runs offline with the stub model.
 - The `agents/vite` plugin is needed for decorators, with `@babel/plugin-proposal-decorators`.
 - Use `@cloudflare/vitest-plugin`. `@cloudflare/vitest-pool-workers` is deprecated.
 - The runtime's RPC error text differs between production and the test runtime. Do not compare it; test the behaviour.

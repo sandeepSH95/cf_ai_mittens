@@ -1,6 +1,6 @@
 # Prototype lineage
 
-This repository grew from a prototype called Keyless Code Mode, built on 18 November 2026 in a separate research workspace that is not published. This file records how that prototype was prompted, how this repository was planned, and how its prompt record works. Sections 2 and 3 are copies; nothing in them was written for this repository.
+This repository grew from a prototype called Keyless Code Mode, built on 18 November 2026 in a separate research workspace that is not published. This file records how that prototype was prompted, how this repository was planned, and how its prompt record works. Sections 2 and 3 are copies, with the marked omissions that section 1 lists; nothing in them was written for this repository.
 
 ## 0. Provenance of this repository
 
@@ -12,7 +12,7 @@ From this point the record works as the header of `prompts/log.md` states: the a
 
 ## 1. How the prototype was built
 
-Two Claude Code agent instances (model claude-fable-5-1) built the prototype on 18 November 2026: the first was stopped during a quota pause and the second resumed from the files on disk. The prototype's `PROMPTS.md`, copied in section 2, quotes the author's original request and both builder briefs verbatim and summarises the build log. Home directory paths are shown as `~` and the agent scratchpad path as `<scratchpad>`; nothing else was changed.
+Two Claude Code agent instances (model claude-fable-5-1) built the prototype on 18 November 2026: the first was stopped during a quota pause and the second resumed from the files on disk. The prototype's `PROMPTS.md`, copied in section 2, quotes the author's original request and both builder briefs verbatim and summarises the build log. Home directory paths are shown as `~` or `<workspace>`, the agent scratchpad path as `<scratchpad>` and the session id as `<session>`. Three passages are withdrawn and marked "Not published": the original request, its copy inside the first brief, and one paragraph of context in the common brief. Nothing else was changed.
 
 The prototype's requirement IDs (KCM-001 to KCM-010) are carried into `criteria/` under new prefixes; the spec is copied in section 3 so the mapping can be checked.
 
@@ -38,8 +38,8 @@ Note on the two grep commands below that contain an em dash character: this repo
 Build Prototype 2, "Keyless Code Mode" (cf_ai_keyless_codemode), a working Cloudflare Agents SDK project, in the folder <workspace>/cf_ai_keyless_codemode (create it; it does not exist).
 
 FIRST read these two files in full, in this order:
-1. <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/BUILDER_BRIEF_COMMON.md  (coding rules, required repo contents, definition of done, final report format; all mandatory)
-2. <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/BUILD_RECIPE.md  (verified versions and config files)
+1. <scratchpad>/<session>/scratchpad/BUILDER_BRIEF_COMMON.md  (coding rules, required repo contents, definition of done, final report format; all mandatory)
+2. <scratchpad>/<session>/scratchpad/BUILD_RECIPE.md  (verified versions and config files)
 Then read lines 634 to 834 and lines 1343 to 1371 of <workspace>/reports/<research report>.md (use sed -n; do not read the whole file). After `npm install`, read node_modules/agents/docs/codemode.md, chat-agents.md, human-in-the-loop.md, models.md, callable-methods.md, observability.md and state.md, and the README and d.ts files of node_modules/@cloudflare/codemode (pin 0.5.6; check `npm view @cloudflare/codemode version` first and use the latest 0.5.x). Also fetch the live docs https://developers.cloudflare.com/dynamic-workers/api-reference/ and https://developers.cloudflare.com/dynamic-workers/examples/codemode/ and https://developers.cloudflare.com/dynamic-workers/getting-started/ with WebFetch, because the loopback-binding wiring (`exports` in wrangler.jsonc and `ctx.exports`) is thinly documented and must be copied from the live page.
 
 ### What Keyless Code Mode is
@@ -97,7 +97,7 @@ A full research report exists at:
 Read ONLY the section for your prototype (line ranges given in your prompt) plus Appendix B.5 (rename/deprecation cheat sheet, around lines 1343 to 1371). Do not read the whole report.
 
 A verified toolchain recipe (versions that work together on this machine, config files to copy verbatim, gotchas) is at:
-  <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/BUILD_RECIPE.md
+  <scratchpad>/<session>/scratchpad/BUILD_RECIPE.md
 Read it first and copy its config shapes. Key facts: agents@0.33.0 exactly, wrangler@4.164.0, vitest 5.x with @cloudflare/vitest-plugin (NOT the deprecated vitest-pool-workers), tsconfig `extends: "agents/tsconfig"`, and `agents()` from `agents/vite` in BOTH vitest.config.ts and vite.config.ts (decorators fail without it).
 
 After `npm install`, the ground-truth API docs for agents@0.33.0 are inside the package: `node_modules/agents/docs/*.md` (for example chat-agents.md, scheduling.md, workflows.md, human-in-the-loop.md, mcp-servers.md, mcp-client.md, models.md, observability.md, callable-methods.md, email.md, browse-the-web.md, codemode.md, lifecycle.md, routing.md). READ the relevant doc file before using any API. The public starter template is four months behind; do not copy it. Also inspect `dist/*.d.ts` when a doc is ambiguous.
@@ -172,9 +172,9 @@ If something cannot be made to work (for example a binding unsupported in the te
 You are finishing Prototype 2, "Keyless Code Mode" (cf_ai_keyless_codemode), a Cloudflare Agents SDK project at <workspace>/cf_ai_keyless_codemode. A previous builder instance started it and was stopped mid-build (the user paused to save quota). Partial work is on disk. You continue from it; you do not start over.
 
 FIRST read these files in full, in this order (use cat):
-1. <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/builder_prompt_1.md  (the ORIGINAL prototype brief; it is mandatory in full, except that its line "create it; it does not exist" is stale: the folder exists now)
-2. <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/BUILDER_BRIEF_COMMON.md  (coding rules, required repo contents, definition of done, final report format; all mandatory)
-3. <scratchpad>/dfdda72e-50cf-4335-8c3c-763633501167/scratchpad/BUILD_RECIPE.md  (verified versions and config files)
+1. <scratchpad>/<session>/scratchpad/builder_prompt_1.md  (the ORIGINAL prototype brief; it is mandatory in full, except that its line "create it; it does not exist" is stale: the folder exists now)
+2. <scratchpad>/<session>/scratchpad/BUILDER_BRIEF_COMMON.md  (coding rules, required repo contents, definition of done, final report format; all mandatory)
+3. <scratchpad>/<session>/scratchpad/BUILD_RECIPE.md  (verified versions and config files)
 Then follow the original brief's reading list (report lines 634 to 834 and 1343 to 1371 via sed -n, the node_modules/agents/docs files, the @cloudflare/codemode package, and the live Dynamic Workers docs via WebFetch).
 
 ### State on disk right now (verified at 17:12 today)

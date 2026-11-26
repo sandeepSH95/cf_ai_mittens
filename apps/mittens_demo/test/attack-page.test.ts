@@ -4,9 +4,9 @@
  *   /api/attacks/mittens --> 0 breached
  *   /api/attacks/naive   --> 1 breached: "env inspection" reads the token from env
  *
- * The naive executor differs from the real sandbox in one line (the token is
+ * The naive executor differs from the real sandbox in the thing that matters (the token is
  * in the isolate's env), so the difference in the two reports proves what
- * that line costs.
+ * that token costs.
  */
 import { exports } from "cloudflare:workers";
 import { ATTACK_PROGRAMS, AttackOutcome, CANARY_GITHUB_TOKEN } from "mittens_attack";

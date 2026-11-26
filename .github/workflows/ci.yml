@@ -38,6 +38,6 @@ jobs:
       - name: Package tests inside workerd
         run: npm test
 
-      # Exit 0 only when every gold case passes. Red while the build is in progress.
+      # Exit 0 only when every gold case passes.
       - name: Gold set
         run: sh verify/run.sh

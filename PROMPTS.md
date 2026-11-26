@@ -14,7 +14,7 @@ Every quote marked **[exact]** is a prompt the author typed, copied from [prompt
 | Who recorded the prompts? | The agent, at the start of each turn. A hook did this in a first version of the repository. The hook only fired in sessions started inside the repository folder, so that version was dropped on 25 November and its entries were carried over. |
 | Who wrote the code? | Agents wrote all of it. The author made the decisions quoted below and approved the gold set. |
 | Who wrote the expected values of the gold cases? | An agent derived them. The author compared the 11 exact cases of the first set with the output of a derivation script and approved the set. Later cases were proposed by the agent in tables and approved by the author before signing. Every case carries the line `"verified": "by agent, <date>"`. |
-| Was the history rewritten? | Yes, on 25 November, before the first push: to remove the held-out cases from every commit so that the builder could not read them, and to remove prompts that the author chose not to publish. And a second time on 26 November, before the repository was made public: to remove texts that the author chose not to publish from every commit, and to name the author in one way. The commit ids in this file, in the ledger and in the prompt log are the ids after that rewrite. Authors, dates and the order of the commits did not change. |
+| Was the history rewritten? | Yes, on 25 November, before the first push: to remove the held-out cases from every commit so that the builder could not read them, and to remove prompts that the author chose not to publish. And a second time on 26 November, before the repository was made public: to remove texts that the author chose not to publish from every commit, and to use one word, "the author", for the person who directed the build. The commit ids in this file and in the ledger are the ids after that rewrite, and so are the HEAD ids in the prompt log from 26 November on. The HEAD ids of 23 and 25 November in the prompt log belong to commits that the first rewrite or the restart replaced, and they match no commit now. The author, the date and the order of each commit did not change. |
 | What is not recorded? | The planning conversation before this repository existed (summarised in [prompts/00-prototype-lineage.md](prompts/00-prototype-lineage.md)), and the transcripts of the six builder passes. A pass is recorded by its standing prompt, its commit, its ledger line and its handoff note. |
 
 Three records were written as the work happened, and they can be checked against each other:
@@ -140,7 +140,7 @@ The builder had added one public method for a host-side count. The author did no
 
 > The extra RPC is acceptable for our first version. Log the sanbox issue for future investigation.
 
-**[exact]**, 26 November. Result: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md), which now has seven entries.
+**[exact]**, 26 November. Result: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md), which has eleven entries at the time of publication.
 
 > Loop pass is running. From now on run the lop and held out run automatically
 

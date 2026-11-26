@@ -17,7 +17,7 @@
  *                                                                   |  RPC only: no byte of the token crosses this line
  *                                                                   v
  *   GitHubGate (src/gate.ts, host side)  READ methods -> Facade -> GitHubDriver(env.GITHUB_TOKEN)
- *   apply_writes (needsApproval) ------> human Approve -> applyPlan -> GitHubDriver write methods
+ *   apply_writes (needsApproval) ------> human Approve -> the plan's writes -> GitHubDriver write methods
  *   SQLite: chat messages (AIChatAgent) | ledger(facade_calls, round_trips, isolate_start_ms, tokens)
  */
 import { AIChatAgent } from "@cloudflare/ai-chat";

@@ -1,6 +1,33 @@
 # PLAN.md: Mittens, the real build
 
-Status: draft, 20 November 2026. Owner: the author. Read one step at a time: the first prompt of a session names the step, and that step's section is self-contained. The why lives in `docs/AGENTIC_LOOP_STRATEGY.md`; this file is the what and the how. Where step numbers here differ from the playbook's phase numbers, this file wins.
+> **This is the plan as it was written before the build, on 20 November 2026.** A plan may change when the build gives a reason. Each such change is in the change log below, with its reason. The text of the steps is left as it was written, so some files, steps and tools that it names differ from the repository. Where this file and the repository differ, the change log, the README and the code are right.
+
+## Change log: what the build changed, and why
+
+| Date (2026) | The plan said | What was done | The reason, found while building |
+| --- | --- | --- | --- |
+| 25 Nov | A hook records every prompt | The agent records the prompts at the start of each turn | The hook only fires in a session that is started inside the repository folder. That made the record a constraint on how the work could be done. |
+| 25 Nov | A human verifies each gold case by hand and signs it `by hand` | An agent derived the expected values. The author compared the 11 exact cases of the first set with the output of a derivation script, approved the set, and the cases are signed `by agent` | The values come from fixtures by fixed rules, so a script can derive them and a person can check the script's output. The signature line says what happened and claims no more. |
+| 25 Nov | Held-out drafts sit in the repository until a human moves them | The held-out cases live in `../mittens_holdout` and were removed from every commit | A builder pass can read every file in the repository, and the history too. |
+| 25 Nov | The verifier is JavaScript: `verify/lint-case.js`, `verify/runner.test.ts` | The verifier is TypeScript that Node 24 runs directly. The case runner is `verify/runner/cases.test.ts` and runs inside workerd | One language for the packages and the verifier. The cases need the Workers runtime, so the runner is a test file of that runtime. |
+| 26 Nov | The Stop hook holds a pass while the verifier is red | A pass may end red, but not worse than it started | With 35 failing cases at the start, "never end red" makes the first pass do the whole build in one session. |
+| 26 Nov | `loop/loop.sh` is the loop, in shell | `loop/loop.sh` is a small wrapper. The loop is `loop/loop.ts`, with self-tests | The caps, the plateau rule and the builder's environment need tests. Shell gave none. |
+| 26 Nov | The builder inherits the caller's environment | Credential variables are stripped and network tools are denied for a pass | A security review of the commit found that a pass started with every variable of the caller. |
+| 26 Nov | The fence covers `criteria/`, `gold/` and `verify/` | The fence also covers `fixtures/`, `loop/` and the hook files | A builder that can edit the loop or the hooks can remove the fence. |
+| 26 Nov | A gold case compares the runtime's RPC error text | The case checks the behaviour: the write is rejected | The error text differs between the production runtime and the test runtime. No build could pass the case. |
+| 26 Nov | One loop run of up to 12 passes | One pass per run | The author reads each pass before the next one starts. |
+| 26 Nov | The criteria name the behaviour of an error | Two error wordings were added to the criteria | The first held-out run failed on two wordings that no criterion stated, so no builder could know them. |
+| 26 Nov | The sandbox counts the gate calls of a program | The demo counts them on the host, at the cost of two more RPCs per read | A review found that a count made inside the isolate can be changed by the program. See KI-001 and KI-002. |
+| 26 Nov | Each ledger line holds a timestamp, tokens, cost, the hash of the standing prompt and a held-out flag | Each line holds the pass, the commit, the exit code, the counts and the failing case ids | Scope, not a finding. The commit of a line gives the time and the prompt file. Held-out runs are reported in the README and are not in the ledger. |
+| 26 Nov | An invariant check with predicates in `verify/predicates.ts` | The verifier skips the live-model case. `tools/live-check.mjs` runs it against a running demo | A live model needs a Cloudflare login, which a verifier run must not need. The first live check found two faults that every scripted check had missed. |
+| 26 Nov | The attack page has an editable pull request body, and a recording is in the README | The attack page runs eight attacks against two executors: the sandbox and a naive control with the token in its environment | A control that fails on purpose shows that the attacks are real. A first reader took the control's breach for a fault, so the page states the expected result. |
+| 26 Nov | Workers AI is the default model | A scripted stub model is the default | The demo then runs with no account. The `ai` binding also makes `wrangler dev` open a remote session unless `--local` is given. |
+| 26 Nov | Deploy the demo and publish the three packages | No public deployment and no published packages | An open live model on a public URL lets any visitor spend the owner's allowance. The README shows how to run and deploy from a clone. |
+| 26 Nov | A human starts every loop run and every held-out run | The interactive agent may start them, on the author's word | The author's standing instruction of that day. A builder pass still may not. |
+| 26 Nov | `tools/mittens_harness/`, `.claude/rules/`, a verify skill, a README per package | Not made | Scope. The loop, the hooks and `AGENTS.md` hold what these would have held. |
+| 26 Nov | Two planning documents next to this one | One. The second, about the prompt record, was removed | The author's choice. |
+
+Status: the plan of 20 November 2026. Owner: the author. Read one step at a time: the first prompt of a session names the step, and that step's section is self-contained. The why lives in `docs/AGENTIC_LOOP_STRATEGY.md`; this file is the what and the how. Where step numbers here differ from the playbook's phase numbers, this file wins.
 
 ## 0. Read this first
 
@@ -16,7 +43,7 @@ How this file is written, and why (sources in section 10):
 2. Every step ends with a check that returns pass or fail with an exit code. "Done when" is something you can run, not something you judge.
 3. Rules that cannot have exceptions are hooks, not sentences. A "do not" in a markdown file is not a deny; the hook is. This file tells you where each hook is so you know what will stop you.
 4. Steps are small and one step is one session. A 2026 study of 1,650 Claude Code sessions found compliance falling about 5.6 percent per additional generated function within a session; a fresh session per step resets that.
-5. Everything is specific: file paths, commands, expected output, criteria IDs. No adjectives. A study of 124 pull requests found repositories with an agent instruction file ran 28.6 percent faster with 16.6 percent fewer output tokens; a separate study found agent-generated instruction files made agents slightly worse. This file is human-written and dated.
+5. Everything is specific: file paths, commands, expected output, criteria IDs. No adjectives. A study of 124 pull requests found repositories with an agent instruction file ran 28.6 percent faster with 16.6 percent fewer output tokens; a separate study found agent-generated instruction files made agents slightly worse. This file is dated.
 6. The always-loaded file, `AGENTS.md`, stays under 200 lines (Cloudflare's reviewer penalises longer files and "tool names without runnable commands") and points here. This file is longer because it is read one step at a time.
 7. It is kept current or deleted. Cloudflare's rule for its own repos: a stale agent file is worse than none.
 

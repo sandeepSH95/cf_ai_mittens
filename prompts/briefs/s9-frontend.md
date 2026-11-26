@@ -56,7 +56,7 @@ Run each from the repository root and paste the last lines and the exit code in 
 2. `npm run typecheck -w apps/mittens_demo`: exit 0.
 3. `npm run build -w apps/mittens_demo`: exit 0, `dist/` is built.
 4. `npm test -w apps/mittens_demo`: every test passes (56 before your change, plus 4 in `test/attack-page.test.ts`).
-5. `grep -rn "—" apps/mittens_demo/src/app apps/mittens_demo/index.html`: prints nothing.
+5. `grep -rn "<the em dash character, U+2014>" apps/mittens_demo/src/app apps/mittens_demo/index.html`: prints nothing.
 6. `grep -rn "\"\\^" apps/mittens_demo/package.json`: list which carets were there before you and confirm you added none.
 
 ## Report, your last message

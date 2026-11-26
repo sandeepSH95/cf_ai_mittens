@@ -1,6 +1,6 @@
 # Prompt log
 
-The prompts the author typed to Claude Code while building this repository, recorded by the agent at the start of each turn, verbatim, with the UTC time, the first eight characters of the session id, and the commit they were typed against. The author decides which prompts are published here: prompts that were not about the build, or that the author chose not to publish, are omitted. No recorded prompt was altered, typos included. The agent refuses to record a prompt that contains a credential-shaped string. The curated narrative is `PROMPTS.md`; this file is where a quote is checked.
+The prompts the author typed to Claude Code while building this repository, recorded by the agent at the start of each turn, verbatim, with the UTC time, the first eight characters of the session id, and the commit they were typed against. The author decides which prompts are published here: prompts that were not about the build, or that the author chose not to publish, are omitted. No recorded prompt was altered, typos included, with one exception: in the pasted handover note of 23 November two places are marked in square brackets, where the author withdrew four words and where a document that was later removed was named. The agent refuses to record a prompt that contains a credential-shaped string. The curated narrative is `PROMPTS.md`; this file is where a quote is checked.
 
 ## Entries carried over from the abandoned hook version, 23 November 2026
 

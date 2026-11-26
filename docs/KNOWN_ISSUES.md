@@ -26,7 +26,7 @@ To investigate:
 - Or must `facadeCalls` and `isolateStartMs` leave the result of `execute`, with the count moved to the gate package as a documented duty of the host?
 - Criterion SBX-005 names both fields. A change needs a new criterion text and new gold cases first.
 
-## KI-002: the host-side count costs one RPC per read
+## KI-002: the host-side count costs two RPCs per read
 
 Logged 26 November 2026. Status: accepted for the first version.
 
@@ -81,3 +81,28 @@ The concern: a program starts a read, does not await it and returns. The read co
 The experiment, in the test runtime: a program fired two reads with no `await` and returned. In a second run a quiet program followed it in the same turn. Result in both runs: the stub received 0 reads and the ledger row had `facade_calls` 0. The isolate ends with the program, and its pending calls end with it. The count and the driver agreed, and the next program's row was not changed.
 
 Limit of the experiment: one run of each shape, local runtime only. The order of an isolate's end and a pending RPC is not a documented guarantee.
+
+## KI-008: the demo has no login, and every visitor shares one chat
+
+Logged 26 November 2026, from the code review before publication. Status: accepted for a demo that is not hosted.
+
+No route asks who the caller is, and the page connects every visitor to the agent instance `default`. With the stub repository this costs nothing. With `GITHUB_DRIVER=github` on a public URL, any visitor could chat and approve a write that the host makes with its token. `GET /api/attacks/<target>` also starts eight isolates per call for any caller. The README says to put a deployment behind a login for this reason. A later version needs a login and one agent instance per user.
+
+## KI-009: two programs in one model step share one count
+
+Logged 26 November 2026, from the same review. Status: open, not reproduced.
+
+The agent holds one gate meter per turn, and each program run starts it again. If a model sends two `code` calls in one step, the two runs can overlap, and both ledger rows can hold a wrong `facade_calls`. The system prompt asks for one program per task, and no test sends two. The fix is one meter per program run.
+
+## KI-010: the GitHub driver reads the first 100 items of a list
+
+Logged 26 November 2026, from the same review. Status: open.
+
+`drivers/github.ts` asks for `per_page=100` and does not follow the next page. A repository with more than 100 open pull requests gives a shortened list with no sign of it, so a plan made from that list is incomplete. The stub repository is not affected.
+
+## KI-011: test support code is in the app's source folder
+
+Logged 26 November 2026, from the same review. Status: open.
+
+`drivers/agent-client.ts` and the scripted model in `drivers/model.ts` exist for tests, and `ai/test` is imported by the Worker. `services/gate-meter.ts` looks the agent up by name, which is driver work in a service file. None of this changes behaviour. It makes the bundle larger and the layers less clean than `AGENTS.md` asks.
+

@@ -29,7 +29,7 @@ export function ChatTab() {
   const { messages, sendMessage, status, addToolApprovalResponse, clearHistory } = useAgentChat({ agent });
   const [draft, setDraft] = useState(EXAMPLE_PROMPT);
   const modelId = agent.state?.modelId ?? null;
-  const connection = connectionOf(agent.identified, agent.connectionError !== null);
+  const connection = connectionOf(agent);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -96,10 +96,10 @@ export function ChatTab() {
 }
 
 // Example: the agent named itself gives "connected". A final close gives "failed". A reconnect gives "connecting".
-function connectionOf(identified: boolean, failed: boolean): Connection {
-  if (failed) {
+function connectionOf(socket: { identified: boolean; connectionError: unknown }): Connection {
+  if (socket.connectionError !== null) {
     return Connection.Failed;
   }
 
-  return identified ? Connection.Connected : Connection.Connecting;
+  return socket.identified ? Connection.Connected : Connection.Connecting;
 }

@@ -2,6 +2,9 @@ node_modules/
 .wrangler/
 dist/
 .dev.vars
+.env
+.env.*
+.claude/settings.local.json
 worker-configuration.d.ts
 ledger/pass-*.json
 .DS_Store

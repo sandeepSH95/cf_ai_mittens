@@ -20,7 +20,6 @@ export const ModelDriverKind = { WorkersAi: "workers-ai", Stub: "stub" } as cons
 export type ModelDriverKind = (typeof ModelDriverKind)[keyof typeof ModelDriverKind];
 
 export const WORKERS_AI_MODEL: WorkersAIModelId = "@cf/openai/gpt-oss-120b";
-export const WORKERS_AI_ALTERNATIVE_MODEL: WorkersAIModelId = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const STUB_PROVIDER = "stub";
 
 /**

@@ -1,10 +1,10 @@
 # Verification sheet: step S4 gold drafts
 
-Written 25 November 2026 by the builder agent. Nothing here is signed. A human checks each row, then moves the case to `gold/cases/` and adds the `verified` line.
+Written 25 November 2026 by the builder agent. Nothing here was signed when it was written. The cases were signed later the same day, by an agent with the author's approval, and moved to `gold/cases/`: `PROMPTS.md` has the detail.
 
 Short names used in the table:
 
-- `P:` is the prototype, `../cf_ai_keyless_codemode/`.
+- `P:` is the prototype, `../cf_ai_keyless_codemode/`. It is not published.
 - NET is the network error: `This worker is not permitted to access the internet via global functions like fetch(). It must use capabilities (such as bindings in 'env') to talk to the outside world.`
 - BUDGET is `Program stopped: iteration budget exceeded (runaway loop or recursion)` (`P:src/drivers/sandbox.ts:43`).
 - TIMEOUT is `Program stopped: execution timed out` (`P:src/drivers/sandbox.ts:44`).

@@ -1,12 +1,12 @@
 /**
- * Sandbox driver: the ONLY file that uses env.LOADER (Dynamic Workers).
+ * Sandbox driver: the only file of the three packages that uses the Worker Loader (Dynamic Workers).
  *
  *   host (Durable Object)                         fresh V8 isolate per run
  *   ──────────────────────                        ─────────────────────────
  *   createSandbox(...).execute(program)           main.js  (shim, fixed)
  *     normalizeCode  -> async () => {...}           - builds `github.*` wrappers over env.GH
  *     applyBudget    -> __tick() in every loop      - counts facade calls, time of first call
- *     LOADER.load({                                 - captures console, races a timeout
+ *     LOADER.load({                                 - races a timeout
  *       env: { GH: <the gate handle> },           program.js (the model's code, spliced in)
  *       globalOutbound: null,  <- no fetch/connect   export default (github, __tick) => (<code>)
  *       limits: { cpuMs }      <- production stop
@@ -35,9 +35,10 @@ export const DEFAULT_TICK_BUDGET = 2_000_000;
 /** Extra time the host waits past the sandbox's own timer before giving up. */
 const HOST_GRACE_MS = 2_000;
 
-export const SandboxStop = { Budget: "budget", Timeout: "timeout" } as const;
 export const BUDGET_ERROR_MESSAGE = "Program stopped: iteration budget exceeded (runaway loop or recursion)";
 export const TIMEOUT_ERROR_MESSAGE = "Program stopped: execution timed out";
+/** Reported when a program throws a value with no text. Example: throw new Error(""). An empty error would read as "no error". */
+export const EMPTY_ERROR_MESSAGE = "Program failed: it threw an error with no message";
 
 /** What execute(program) resolves to. All four keys are always present. */
 export type SandboxOutcome = {
@@ -95,6 +96,7 @@ import makeProgram from "./${PROGRAM_MODULE}";
 
 const BUDGET_ERROR = ${JSON.stringify(BUDGET_ERROR_MESSAGE)};
 const TIMEOUT_ERROR = ${JSON.stringify(TIMEOUT_ERROR_MESSAGE)};
+const EMPTY_ERROR = ${JSON.stringify(EMPTY_ERROR_MESSAGE)};
 
 export default class Sandbox extends WorkerEntrypoint {
   async run(options) {
@@ -130,7 +132,9 @@ export default class Sandbox extends WorkerEntrypoint {
       const result = await Promise.race([program(), timeout]);
       return { result, ...metrics };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error), ...metrics };
+      // An empty text would read as "no error" on the host, so a failed run always carries a text.
+      const text = error instanceof Error ? error.message : String(error);
+      return { error: text === "" ? EMPTY_ERROR : text, ...metrics };
     } finally {
       clearTimeout(timer);
     }
@@ -245,19 +249,27 @@ async function runInIsolate(loader: WorkerLoader, gate: Fetcher, limits: Limits,
 
   const entrypoint = worker.getEntrypoint() as unknown as ShimEntrypoint;
 
+  const hostTimer = startHostTimer(limits.timeoutMs + HOST_GRACE_MS);
+
   try {
-    return await Promise.race([
-      entrypoint.run({ budget: limits.tickBudget, timeoutMs: limits.timeoutMs }),
-      hostTimeout(limits.timeoutMs + HOST_GRACE_MS)
-    ]);
+    return await Promise.race([entrypoint.run({ budget: limits.tickBudget, timeoutMs: limits.timeoutMs }), hostTimer.expired]);
   } finally {
+    // A run that ended in time must not leave its timer pending in the host.
+    hostTimer.cancel();
     dispose(entrypoint);
     dispose(worker);
   }
 }
 
-function hostTimeout(ms: number): Promise<never> {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error(TIMEOUT_ERROR_MESSAGE)), ms));
+/** The host's own timer. `expired` rejects after `ms`. `cancel` stops it when the run ended first. */
+function startHostTimer(ms: number): { expired: Promise<never>; cancel: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(TIMEOUT_ERROR_MESSAGE)), ms);
+  });
+
+  return { expired, cancel: () => clearTimeout(timer) };
 }
 
 // Stubs expose Symbol.dispose; releasing them lets the isolate go away.

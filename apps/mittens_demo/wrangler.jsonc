@@ -8,11 +8,12 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // Workers AI. `remote: true` lets `wrangler dev` call the real model when
-  // you are logged in. Use `wrangler dev --local` (npm run dev:offline) to
+  // you are logged in. Use `wrangler dev --local` (npm run dev) to
   // stay offline with the stub drivers.
   "ai": { "binding": "AI", "remote": true },
 
-  // Dynamic Workers. The only file that uses this binding is sandbox.ts in the package mittens_sandbox.
+  // Dynamic Workers. Two files use this binding: sandbox.ts in the package mittens_sandbox, and the
+  // naive executor of the attack page (src/drivers/naive-executor.ts), which is unsafe on purpose.
   "worker_loaders": [{ "binding": "LOADER" }],
 
   "durable_objects": { "bindings": [{ "name": "CoderAgent", "class_name": "CoderAgent" }] },

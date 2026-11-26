@@ -2,9 +2,11 @@
 
 Date: 20 November 2026.
 
+> **This is the strategy as it was written before the build, on 20 November 2026.** It is kept as a record of the reasoning. The build changed several details: the ledger has fewer fields, the loop script is `loop/loop.ts`, and an agent derived the gold cases with the author's approval. Where this file and the repository differ, the README and the code are right.
+
 ## The strategy in one paragraph
 
-A builder agent loops until a deterministic verifier says green, and the verifier, the gold set it checks against, and the criteria they trace to are all outside the agent's reach. Two humans (the author and the coordinating agent, before any code exists) write the criteria and the gold set. The builder agent writes code. The verifier decides whether a change passes: not the agent, and not a second model. A held-out set the agent never sees catches overfitting. The author reads the diff before anything merges. The loop itself is the demo: the repository shows an agent that built and verified itself against a fixed target, with every iteration recorded, and a reviewer can read the loop script, the verifier and the gold set in full in ten minutes.
+A builder agent loops until a deterministic verifier says green, and the verifier, the gold set it checks against, and the criteria they trace to are all outside the agent's reach. Two parties (the author and the coordinating agent, before any code exists) write the criteria and the gold set. The builder agent writes code. The verifier decides whether a change passes: not the agent, and not a second model. A held-out set the agent never sees catches overfitting. The author reads the diff before anything merges. The loop itself is the demo: the repository shows an agent that built and verified itself against a fixed target, with every iteration recorded, and a reviewer can read the loop script, the verifier and the gold set in full in ten minutes.
 
 The method is gold-set verification: a fixed set of inputs with expected outputs, checked byte for byte on every change, in the style of a machine-learning evaluation set but with a 100 percent pass bar instead of a score. It applies to everything deterministic the agent builds. Where the system is not deterministic (a live model), the gold set gives way to invariant checks, and the exact-match bar gives way to a pass rate that reports but does not block.
 
