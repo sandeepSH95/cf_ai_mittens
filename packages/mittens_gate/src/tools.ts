@@ -17,7 +17,7 @@ import { createCodeTool } from "@cloudflare/codemode/ai";
 import type { Tool, ToolSet } from "ai";
 import { SANDBOX_NAMESPACE } from "mittens_sandbox";
 import { EXAMPLE_PROGRAM, facadeDescriptors } from "./facade";
-import type { ApplyOutcome, Writes } from "./writes";
+import { PlanRefusal, type ApplyOutcome, type Writes } from "./writes";
 
 export const ToolName = { Code: "code", ApplyWrites: "apply_writes" } as const;
 export type ToolName = (typeof ToolName)[keyof typeof ToolName];
@@ -54,14 +54,22 @@ export type AgentToolOptions = { executor: Executor; reads: { spec: () => string
  * that passes validatePlan. A plan it refuses must not reach the human, so
  * that call goes on without a question: execute validates the plan again
  * and throws the same refusal before any write.
+ * Any other error of validatePlan surfaces: the check fails closed.
  * Example: a plan of 26 writes fails with "Plan refused: 26 writes, the limit is 25" and no approval request.
  */
 function askForValidPlans(writes: Writes): Tool<{ plan: unknown }, ApplyOutcome> {
   const needsApproval = ({ plan }: { plan: unknown }): boolean => {
     try {
       writes.validatePlan(plan);
-    } catch {
-      return false;
+    } catch (failure) {
+      // Only a refusal of the plan skips the question. Any other error is a
+      // fault of the check itself, and a safety check that is broken must
+      // not answer "no approval needed".
+      if (failure instanceof PlanRefusal) {
+        return false;
+      }
+
+      throw failure;
     }
 
     return true;
