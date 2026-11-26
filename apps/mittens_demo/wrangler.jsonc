@@ -20,8 +20,8 @@
 
   "observability": { "enabled": true, "traces": { "enabled": true } },
 
-  // The React UI built by `vite build`. Agent routes bypass the asset server.
-  "assets": { "directory": "./dist", "run_worker_first": ["/agents/*"] },
+  // The React UI built by `vite build`. Agent routes and the attack API bypass the asset server.
+  "assets": { "directory": "./dist", "run_worker_first": ["/agents/*", "/api/*"] },
 
   // Drivers default to the offline stubs. Override in .dev.vars or with
   // `wrangler secret put` (GITHUB_TOKEN) and `vars` for production.

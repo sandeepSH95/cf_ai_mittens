@@ -165,3 +165,7 @@ approve as reccomended
 ## 2026-11-26T14:33:44Z, session dfdda72e, HEAD 15bc5b3
 
 Loop pass is running. From now on run the lop and held out run automatically
+
+## 2026-11-26T14:37:16Z, session dfdda72e, HEAD 5275e85
+
+approve as reccomended. ensure frontends use shadcn styling. stub by default. README shoudl follow a show before tellign methodoligy, with diagram, and legger s a chart with link to known issues

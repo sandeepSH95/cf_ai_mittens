@@ -25,6 +25,7 @@ import { routeAgentRequest } from "agents";
 import { wrapAISDK } from "agents/observability/ai";
 import * as ai from "ai";
 import { convertToModelMessages, stepCountIs, type StepResult, type ToolSet } from "ai";
+import { isAttackTarget, runAttacks } from "./services/attack-run";
 import { deniedAsResponded } from "./services/denial";
 import { GateMeter } from "./services/gate-meter";
 import { Ledger, type LedgerRow } from "./services/ledger";
@@ -36,6 +37,7 @@ export { GitHubGate } from "./gate";
 const { streamText } = wrapAISDK(ai);
 
 const LEDGER_ROUTE = "ledger";
+const ATTACKS_ROUTE = "/api/attacks/";
 const HTTP_NOT_FOUND = 404;
 
 export type CoderState = {
@@ -135,8 +137,37 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * GET /api/attacks/<target> runs the attack suite for the attack page.
+ * Example: /api/attacks/naive answers { target: "naive", breached: 1, cases: [...] }.
+ * Returns null for every other path.
+ */
+async function routeAttackRequest(request: Request, env: Env, ctx: ExecutionContext): Promise<Response | null> {
+  const path = new URL(request.url).pathname;
+
+  if (!path.startsWith(ATTACKS_ROUTE)) {
+    return null;
+  }
+
+  const target = path.slice(ATTACKS_ROUTE.length);
+
+  if (request.method !== "GET" || !isAttackTarget(target)) {
+    return new Response("not found", { status: HTTP_NOT_FOUND });
+  }
+
+  const gate = ctx.exports.GitHubGate({ props: { runId: crypto.randomUUID() } });
+
+  return Response.json(await runAttacks(env, gate, target));
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const attackResponse = await routeAttackRequest(request, env, ctx);
+
+    if (attackResponse !== null) {
+      return attackResponse;
+    }
+
     return (await routeAgentRequest(request, env)) ?? new Response("not found", { status: HTTP_NOT_FOUND });
   }
 } satisfies ExportedHandler<Env>;
