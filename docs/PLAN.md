@@ -44,7 +44,7 @@ Non-goals, for this build:
 | fence | the folders the builder cannot edit: `criteria/`, `gold/`, `verify/`, `loop/`; enforced by a PreToolUse hook and `gold/MANIFEST.sha256` |
 | pass | one headless agent session started by `loop/loop.sh`, followed by one verifier run and one ledger line |
 | run | a sequence of passes until exit 0, a cap, or an exit of 3 or 4 |
-| held-out | gold cases kept outside the repository in `../mittens_holdout/`, run by the human only |
+| held-out | gold cases kept outside the repository in `../mittens_holdout/`. Run by the human until 26 November 2026, and from then by the interactive agent on the human's standing instruction. Never by a builder pass |
 | ledger | `ledger/iterations.jsonl`, one line per pass, written by `loop/record.sh`, never by the agent |
 | the demo | `apps/mittens_demo`: the attack page, the chat agent, the GitHub driver and fixtures |
 
@@ -101,7 +101,7 @@ cf_ai_mittens/
 | Regenerate the manifest (human only) | `node verify/manifest.ts --print > gold/MANIFEST.sha256` | file rewritten |
 | One loop run | `sh loop/loop.sh` | exits 0 (green), 1 (cap), 3, 4 or 5 (human); ledger lines appended |
 | Record a pass by hand | `sh loop/record.sh <pass> <exit-code>` | one line appended to `ledger/iterations.jsonl` |
-| Held-out run (human only) | `GOLD_DIR=../mittens_holdout sh verify/run.sh` | same output, flagged line in the ledger |
+| Held-out run (human, or the interactive agent since 26 November 2026) | `GOLD_DIR=../mittens_holdout sh verify/run.sh` | same output, flagged line in the ledger |
 | Demo offline | `npm run dev -w apps/mittens_demo` | `wrangler dev --local` on a free port; stub drivers |
 
 ## 6. Steps
@@ -217,6 +217,8 @@ Human runs `sh loop/loop.sh`. Each pass is a fresh `claude -p` session with `loo
 
 Done when: `sh verify/run.sh` exits 0, or the run stops at a cap or at exit 3 or 4 and the human decides.
 
+What happened: the human started all six passes. The first run had a cap of 12 and was stopped by hand in pass 3. From then on the cap was one pass per run (`MAX_PASSES=1`), and the human read each pass before the next. On 26 November 2026, during pass 6, the human told the interactive agent to start later loop runs. No later run was needed.
+
 ### S8, interactive: review and held-out
 
 Read first: `criteria/`; the diff since the S6 commit.
@@ -226,6 +228,8 @@ Do:
 1. Run the reviewer subagent over the diff against every criteria ID; collect findings with IDs.
 2. For each finding: fix it, and if no gold case would have caught it, say so in the report (the human writes the case).
 3. Do not run the held-out set; the human does, with `GOLD_DIR=../mittens_holdout sh verify/run.sh`, and records it.
+
+What happened: the human ran the first two held-out runs (9 of 12, then 12 of 12). On 26 November 2026 the human told the interactive agent to do the held-out runs from then on. The set now has 17 cases and the last run gave 17 of 17.
 
 Done when: the reviewer reports no finding above "style"; `sh verify/run.sh` exits 0.
 

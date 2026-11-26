@@ -33,8 +33,9 @@ criteria/*.md --> gold/cases/*.json --> sh verify/run.sh --> exit code
 | The verifier | `sh verify/run.sh` |
 | Typecheck and self-tests of the verifier, loop and hooks | `npm run typecheck:verify && npm run test:verify` |
 | Lint one gold case draft | `node verify/lint-case.ts gold/drafts/G-050.json` |
-| One loop run (human) | `sh loop/loop.sh` |
+| One loop run (human, or the interactive agent on the human's word; never a builder pass) | `sh loop/loop.sh` |
 | Record a pass by hand (human) | `sh loop/record.sh <pass> <exit-code>` |
+| Held-out run (human, or the interactive agent on the human's word; never a builder pass) | `GOLD_DIR=../mittens_holdout sh verify/run.sh; sh verify/run.sh` |
 | Demo, offline | `npm run build -w apps/mittens_demo && npm run dev -w apps/mittens_demo` |
 
 ## Layout
@@ -56,7 +57,7 @@ criteria/*.md --> gold/cases/*.json --> sh verify/run.sh --> exit code
 ## Boundaries
 
 1. Do not change a fenced path. A hook refuses the call with `fenced path: <path>. Stop and report.` The manifest check then catches what a hook misses: exit 3.
-2. Do not read `../mittens_holdout`. It is the held-out set.
+2. In a builder pass, do not read `../mittens_holdout`. It is the held-out set. A hook refuses the call.
 3. Do not special-case the input of a gold case. Implement the criterion.
 4. Do not run `wrangler deploy`, `wrangler login`, `wrangler secret` or `git push`. A human does these.
 5. No secret in the Dynamic Worker `env`, in a fixture, in a log or in a document. The GitHub token stays on the host, in `.dev.vars` or a Worker secret.

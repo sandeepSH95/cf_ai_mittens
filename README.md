@@ -30,6 +30,8 @@ npm run dev -w apps/mittens_demo
 
 Open the address that Wrangler prints. The first tab runs the attacks. The second tab is the chat agent.
 
+If port 8787 is in use, give another one: `npm run dev -w apps/mittens_demo -- --port 8791`.
+
 ## Why the attacks fail
 
 ```mermaid
@@ -155,8 +157,21 @@ Drivers are chosen by variables, and both default to stubs:
 | The verifier | `sh verify/run.sh` |
 | Self-tests of the verifier, the loop and the hooks | `npm run test:verify` |
 | Redraw the chart from the ledger | `node tools/ledger-chart.mjs` |
+| The live-model check (G-039), against a running demo | `node tools/live-check.mjs <base-url>` |
 
 Node 24 or later is required: the verifier runs TypeScript directly.
+
+### Deploy
+
+A human deploys. A hook refuses these commands to every agent session.
+
+```bash
+npx wrangler login
+npm run build -w apps/mittens_demo
+cd apps/mittens_demo && npx wrangler deploy --var MODEL_DRIVER:workers-ai
+```
+
+The flag selects the live model for the deployed Worker. The repository driver stays the stub, so the deployed demo holds no GitHub token. Dynamic Workers (the `worker_loaders` binding) must be available on the account.
 
 ## Where to look
 

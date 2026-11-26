@@ -186,3 +186,25 @@ of S10
 ## 2026-11-26T14:53:00Z, session dfdda72e, HEAD 0f2ee10
 
 increase width of tattach column to prevent word wrap
+
+## 2026-11-26T14:56:54Z, session dfdda72e, HEAD 384cc92
+
+list all next steps and decisions in tables
+
+## 2026-11-26T15:04:00Z, session dfdda72e, HEAD 384cc92
+
+decision:
+
+1. keep
+2. keep both
+3. keep
+4. keep
+5. workers ai with stub repo
+6. run once and record result
+
+Prompt me for logins and auth
+
+Optinal polish:
+proceed with all
+
+Release setps, we will get to
