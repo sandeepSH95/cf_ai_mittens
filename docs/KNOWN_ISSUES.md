@@ -35,3 +35,29 @@ Each read through the gate makes two more RPCs to report the call: the lookup of
 `countGateCall` is a public method, because Durable Object RPC cannot call a private one. The author approved it on 26 November 2026 on one condition: proof that a browser client cannot call it. `apps/mittens_demo/test/client-reach.test.ts` is that proof. It sends the client's RPC frame over a real WebSocket and expects the SDK's refusal, and it fails when the method is marked `@callable`.
 
 A read whose count call throws does not run. Three paths still let a read run with no count: a gate handle with no scope, an agent with no meter, and a run id that does not match. The demo's live path always sets all three.
+
+## KI-003: three attack programs can report a false "held"
+
+Logged 26 November 2026, from the second review (`prompts/briefs/s8-review-2.md`). Status: open.
+
+| Attack | How it can miss a breach |
+| --- | --- |
+| swallowed fetch | A fetch that leaves the isolate and then fails on the network (host offline, DNS error) is reported as "not reached". The request still left. |
+| direct write call | Only `createComment` is tried. A gate with another write method is not seen. |
+| env inspection | The program looks at the keys of `env` and leaves the value of the gate binding out of its result. A token placed under that key is not seen. |
+
+To investigate: a fetch target that the test controls, so "left the isolate" is observed and not inferred; a list of write names, or a probe of every property of the gate handle; a deep scan of every `env` value.
+
+## KI-004: work inside a built-in has no tick
+
+Logged 26 November 2026, from both reviews. Status: open.
+
+The tick budget counts loop bodies and function bodies (`packages/mittens_sandbox/src/budget.ts`). One call of a built-in can do unbounded work with no tick: `"x".repeat(n)`, `Array.from({ length: 1e8 }, Math.random)`, a regular expression with heavy backtracking. In production `cpuMs` stops such a program. Local workerd does not enforce `cpuMs`, so a local run can block.
+
+To investigate: a size check on the arguments of the known heavy built-ins, a refusal of regular expression literals with nested quantifiers, or a documented statement that the tick budget is a local aid and `cpuMs` is the real limit.
+
+## KI-005: a read can run with no count on three fallback paths
+
+Logged 26 November 2026, from the second review. Status: open.
+
+The gate reports each read to the agent's meter. A read still runs, with no count and no error, when the gate handle has no scope, when the agent has no meter, or when the run id does not match. The demo's live path sets all three, and gold case G-047 covers it. The handle with no scope is also what the testing entry's `openGate()` returns by contract, so "refuse every read that cannot be counted" would break that contract. A fix needs a contract change first: a gate handle that states if it is metered.

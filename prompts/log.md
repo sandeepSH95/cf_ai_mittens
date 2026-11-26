@@ -153,3 +153,7 @@ provide details of the contGateCall decision
 ## 2026-11-26T14:23:35Z, session dfdda72e, HEAD c8e92d9
 
 go with A, however we need to have verification on how a browser client may call it
+
+## 2026-11-26T14:27:29Z, session dfdda72e, HEAD 595799f
+
+approve as reccomended
