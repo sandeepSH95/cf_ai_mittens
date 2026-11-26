@@ -36,7 +36,7 @@ type AttackCardProps = {
  *   | description                         412 ms |
  *   | Expected: 0 of 8 breached. why             |
  *   | Result: as expected                        |
- *   | attack | criterion | expected | outcome | detail |
+ *   | attack, detail below | criterion | expected | outcome |
  *   +--------------------------------------------+
  */
 export function AttackCard({ title, description, role, expectedBreaches, expectedReason, run, phase }: AttackCardProps) {
@@ -60,17 +60,16 @@ export function AttackCard({ title, description, role, expectedBreaches, expecte
       <CardContent className="flex flex-col gap-4">
         <ExpectedNote expectedBreaches={expectedBreaches} reason={expectedReason} run={run} />
 
-        {/* Fixed column widths: the detail text wraps inside the card and is never cut off. */}
-        <Table className="table-fixed">
+        {/* The attack column takes all the width the three short columns leave, so a name stays on one line and its detail wraps below it. */}
+        <Table>
           <caption className="sr-only">{`${title}: the outcome of each attack`}</caption>
 
           <TableHeader>
             <TableRow>
-              <TableHead scope="col" className="w-[26%]">Attack</TableHead>
-              <TableHead scope="col" className="w-[13%]">Criterion</TableHead>
-              <TableHead scope="col" className="w-[13%]">Expected</TableHead>
-              <TableHead scope="col" className="w-[18%]">Outcome</TableHead>
-              <TableHead scope="col" className="w-[30%]">Detail</TableHead>
+              <TableHead scope="col" className="w-full">Attack</TableHead>
+              <TableHead scope="col">Criterion</TableHead>
+              <TableHead scope="col">Expected</TableHead>
+              <TableHead scope="col">Outcome</TableHead>
             </TableRow>
           </TableHeader>
 

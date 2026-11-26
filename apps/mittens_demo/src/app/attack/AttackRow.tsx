@@ -7,11 +7,11 @@ import { TableCell, TableRow } from "@/components/ui/table";
 
 import { FAILED_LABEL, NOT_RUN_LABEL, Outcome, RUNNING_LABEL, RunPhase, type DisplayRow } from "./constants";
 
-/** The table has five columns. The source row spans all of them. */
-export const ATTACK_COLUMNS = 5;
+/** The table has four columns. The source row spans all of them. */
+export const ATTACK_COLUMNS = 4;
 
 /**
- * One attack: name, criterion id, the expected verdict, the verdict and detail. A row with a program
+ * One attack: its name with the detail below it, criterion id, the expected verdict and the verdict. A row with a program
  * opens on a click and shows the source below it.
  */
 export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase: RunPhase; expected: DisplayRow["outcome"] }) {
@@ -23,7 +23,8 @@ export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase
   return (
     <>
       <TableRow>
-        <TableCell className="font-medium whitespace-normal">
+        <TableCell className="whitespace-nowrap">
+          <div className="font-medium">
           {hasSource ? (
             <button
               type="button"
@@ -39,6 +40,10 @@ export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase
           ) : (
             <span className="pl-5">{row.name}</span>
           )}
+          </div>
+
+          {/* The detail wraps under the name, so the name itself is never broken over two lines. */}
+          {row.detail.length > 0 ? <p className="mt-1 pl-5 text-xs whitespace-normal text-muted-foreground">{row.detail}</p> : null}
         </TableCell>
 
         <TableCell className="font-mono text-xs text-muted-foreground">{row.criterion}</TableCell>
@@ -50,7 +55,6 @@ export function AttackRowView({ row, phase, expected }: { row: DisplayRow; phase
           <OutcomeBadge outcome={row.outcome} phase={phase} />
         </TableCell>
 
-        <TableCell className="whitespace-normal text-muted-foreground">{row.detail}</TableCell>
       </TableRow>
 
       {showSource ? (
