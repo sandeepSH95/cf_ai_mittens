@@ -134,12 +134,15 @@ The three packages do not know GitHub. The demo names the GitHub reads and write
 
 ## The demo app
 
-| Assignment component | In this project |
+| Cloudflare product | What it does here |
 | --- | --- |
-| LLM | Workers AI (`@cf/openai/gpt-oss-120b`) in production. A scripted stub model by default, so the demo runs with no account. |
-| Workflow and coordination | A Durable Object (`AIChatAgent` from the Agents SDK) runs the turn. A Dynamic Worker runs each program. Workers RPC joins them. |
-| User input | Chat over WebSocket, with Approve and Reject on every write plan |
-| Memory and state | The chat history, the agent state and the ledger of every program run, in the Durable Object's SQLite |
+| Workers | The host: the HTTP routes, the attack API and the static page (Workers Static Assets) |
+| Durable Objects, with the Agents SDK (`AIChatAgent`) | One agent instance per chat. It runs the turn and keeps the chat history, the agent state and the ledger of every program run in its SQLite storage. |
+| Dynamic Workers (the Worker Loader binding) | A fresh isolate for each program the model writes, with `globalOutbound: null` and one binding |
+| Workers RPC | The only way out of that isolate: a loopback entrypoint (`ctx.exports`) with read methods only |
+| Workers AI | The live model (`@cf/openai/gpt-oss-120b`), when `MODEL_DRIVER` is `workers-ai`. A scripted stub model is the default, so the demo runs with no account. |
+| WebSockets | The chat, with Approve and Reject on every write plan |
+| The Vitest plugin for Workers | Every test and every gold case runs inside workerd, the Workers runtime |
 
 Drivers are chosen by variables, and both default to stubs:
 
