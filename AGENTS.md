@@ -35,7 +35,7 @@ criteria/*.md --> gold/cases/*.json --> sh verify/run.sh --> exit code
 | Lint one gold case draft | `node verify/lint-case.ts gold/drafts/G-050.json` |
 | One loop run (human) | `sh loop/loop.sh` |
 | Record a pass by hand (human) | `sh loop/record.sh <pass> <exit-code>` |
-| Demo, offline | `npm run dev -w apps/mittens_demo` |
+| Demo, offline | `npm run build -w apps/mittens_demo && npm run dev -w apps/mittens_demo` |
 
 ## Layout
 
