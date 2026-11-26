@@ -99,7 +99,7 @@ One more case (a live-model check) is in the set and is skipped by design: it ne
 
 ### What green did not prove
 
-A green verifier proves the cases, not the intent. Two more checks ran after it, and both found things.
+A green verifier proves the cases, not the intent. Three more checks ran after it, and each one found things.
 
 | Check | Result |
 | --- | --- |
@@ -107,6 +107,8 @@ A green verifier proves the cases, not the intent. Two more checks ran after it,
 | Held-out set, now (17 cases) | 17 of 17. The first score is the honest one: after it, two cases stopped being fully unseen. |
 | Review 1, read-only, against every criterion | No breach of a MUST. Nine gaps. Two were regressions against the prototype that the green gold set and the held-out set both missed. |
 | Review 2 | No breach of a MUST. Three more fixes. The rest is logged. |
+| Live model, first check (5 runs of one request against Workers AI) | **A program ran in 2 of 5 runs. A plan reached the human in 0 of 5.** Every deterministic check was green at that time: they all use a scripted model. Two faults: the model call named no output limit, so Workers AI cut each answer at 256 tokens, in the middle of the program. And the model showed its plan as text and asked for a yes in chat. |
+| Live model, after two fixes | 5 of 5 on all four predicates. All three checks are in `ledger/live-model.jsonl`. |
 
 Every gap that weakened a criterion became a gold case first and a fix second. What is not fixed is written down: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
 

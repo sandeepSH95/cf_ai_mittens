@@ -22,6 +22,13 @@ export type ModelDriverKind = (typeof ModelDriverKind)[keyof typeof ModelDriverK
 export const WORKERS_AI_MODEL: WorkersAIModelId = "@cf/openai/gpt-oss-120b";
 export const WORKERS_AI_ALTERNATIVE_MODEL: WorkersAIModelId = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const STUB_PROVIDER = "stub";
+
+/**
+ * The most tokens one model answer may have. Workers AI ends an answer at
+ * 256 tokens when the caller names no limit, and that cuts a tool call in
+ * the middle of its program. Example: a 40-line program is about 600 tokens.
+ */
+export const MAX_OUTPUT_TOKENS = 4096;
 const STUB_MODEL_ID = "stub/mittens";
 
 /** Fixed token counts the stub reports. They exist so the ledger columns are exercised; they measure nothing. */
@@ -33,6 +40,7 @@ const STUB_USAGE = {
 export interface ModelDriver {
   readonly kind: ModelDriverKind;
   readonly modelId: string;
+  readonly maxOutputTokens: number;
   model(): LanguageModel;
 }
 
@@ -40,6 +48,7 @@ export interface ModelDriver {
 export class WorkersAiModelDriver implements ModelDriver {
   readonly kind = ModelDriverKind.WorkersAi;
   readonly modelId: WorkersAIModelId;
+  readonly maxOutputTokens = MAX_OUTPUT_TOKENS;
   readonly #binding: Ai;
 
   constructor(binding: Ai, modelId: WorkersAIModelId = WORKERS_AI_MODEL) {
@@ -75,6 +84,7 @@ const ERROR_OUTPUT_PREFIX = "error";
 export class StubModelDriver implements ModelDriver {
   readonly kind = ModelDriverKind.Stub;
   readonly modelId = STUB_MODEL_ID;
+  readonly maxOutputTokens = MAX_OUTPUT_TOKENS;
   readonly #script: StubScript;
 
   constructor(script: StubScript) {
@@ -139,6 +149,7 @@ const SILENT_STEP: ScriptStep = { text: "" };
 export class ScriptedModelDriver implements ModelDriver {
   readonly kind = ModelDriverKind.Stub;
   readonly modelId = STUB_MODEL_ID;
+  readonly maxOutputTokens = MAX_OUTPUT_TOKENS;
   readonly #steps: ScriptStep[];
   readonly #tools: Pick<StubScript, "codeTool" | "applyTool">;
   #played = 0;

@@ -28,6 +28,7 @@ export const MAX_STEPS = 6;
 export const SYSTEM_PROMPT = `You are a GitHub maintenance assistant for one repository.
 You act by writing ONE JavaScript program with the "${ToolName.Code}" tool. The program runs in a sandbox with no network and can only call the read-only "${SANDBOX_NAMESPACE}" API. Make every read inside that one program instead of calling tools repeatedly.
 The program must never try to write. If the user wants changes (comments, closing), the program returns them as { plan: WritePlan } and you then call "${ToolName.ApplyWrites}" with that plan. A human approves or rejects the call; respect the answer.
+The "${ToolName.ApplyWrites}" call is the only confirmation step. Never show a plan as text and never ask "shall I proceed?": when the program returned a plan, call "${ToolName.ApplyWrites}" at once, in the same turn.
 Answer briefly in plain language. Do not invent data; report what the program returned.`;
 
 /** Example: codeDescription(writes.planSpec()). The code tool puts the read declarations at {{types}}. */

@@ -8,7 +8,8 @@
  *     GET .../ledger, GET .../get-messages         --> what ran and what the page would show
  *     four predicates                              --> pass or fail, with the reason
  *
- *   ledger/live-model.json  <--  the report, written by this script only
+ *   ledger/live-model.jsonl  <--  one line per check, appended by this script only.
+ *                                A later check never replaces an earlier one.
  *
  * The check reports and never blocks: the verifier skips G-039 by design.
  * A model's output is not deterministic, so the result is a pass rate.
@@ -16,12 +17,13 @@
  *
  * Exit 0 when the check ran (whatever the pass rate), 1 when it could not run.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const CASE_FILE = path.join(ROOT, "gold/cases/G-039-live-model.json");
-const REPORT_FILE = path.join(ROOT, "ledger/live-model.json");
+const REPORT_FILE = path.join(ROOT, "ledger/live-model.jsonl");
 
 const AGENT_ROUTE = "/agents/coder-agent";
 const LEDGER_ROUTE = "ledger";
@@ -211,6 +213,11 @@ async function runOnce(baseUrl, userMessage, runNumber) {
   }
 }
 
+// The commit the working tree is on. Example: "2ddc715". Uncommitted changes are not in it.
+function headCommit() {
+  return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
+}
+
 async function main(baseUrl) {
   if (!baseUrl) {
     console.log("usage: node tools/live-check.mjs <base-url>   example: http://localhost:8792");
@@ -246,9 +253,9 @@ async function main(baseUrl) {
     return EXIT_RAN;
   }
 
-  const report = { case: goldCase.id, at: new Date().toISOString(), userMessage: goldCase.input.user_message, passRate, runs };
+  const report = { case: goldCase.id, at: new Date().toISOString(), head: headCommit(), userMessage: goldCase.input.user_message, passRate, runs };
 
-  writeFileSync(REPORT_FILE, `${JSON.stringify(report, null, 2)}\n`);
+  appendFileSync(REPORT_FILE, `${JSON.stringify(report)}\n`);
   console.log(`report: ${path.relative(ROOT, REPORT_FILE)}`);
 
   return EXIT_RAN;

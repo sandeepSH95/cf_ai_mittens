@@ -184,3 +184,4 @@ These are the agent's errors in this build, each with its fix in the history:
 | The builder passes were started with the caller's whole environment. | An automated security review of the commit | Credential variables are stripped and network tools are denied (`52a0532`) |
 | A commit went in with a failing typecheck. | The agent's own check, one step late | The next commit (`a4020db`) |
 | The attack page showed a breach with no word that it was expected. | The author, on first use | Explicit labels (`0f2ee10`) |
+| The live model path was never run before the last day. The model call named no output limit, so Workers AI cut each answer at 256 tokens. A program ran in 2 of 5 live runs, and no plan reached the human. | The first live-model check, after the author's login | An output limit and one more line in the system prompt. Then 5 of 5. |

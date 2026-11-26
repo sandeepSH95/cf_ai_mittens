@@ -24,7 +24,7 @@ export type TurnOptions = {
   scope?: string;
 };
 
-export type Turn = { model: LanguageModel; modelId: string; tools: ToolSet; system: string; stepLimit: number };
+export type Turn = { model: LanguageModel; modelId: string; maxOutputTokens: number; tools: ToolSet; system: string; stepLimit: number };
 
 /** What the agent holds of the gate: the reads, the writes, the tools made of them and the step limit. */
 export type GateParts = { reads: GitHubReads; writes: GitHubWrites; tools: ToolSet; stepLimit: number };
@@ -57,5 +57,12 @@ export function prepareTurn(env: Env, options: TurnOptions): Turn {
 
   const parts = createGateParts(env, executor, options.scope);
 
-  return { model: driver.model(), modelId: driver.modelId, tools: parts.tools, system: SYSTEM_PROMPT, stepLimit: parts.stepLimit };
+  return {
+    model: driver.model(),
+    modelId: driver.modelId,
+    maxOutputTokens: driver.maxOutputTokens,
+    tools: parts.tools,
+    system: SYSTEM_PROMPT,
+    stepLimit: parts.stepLimit
+  };
 }

@@ -78,6 +78,7 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
 
     const result = streamText({
       model: turn.model,
+      maxOutputTokens: turn.maxOutputTokens,
       system: turn.system,
 
       // A rejected apply_writes must reach the model as "execution-denied" (GATE-002).
