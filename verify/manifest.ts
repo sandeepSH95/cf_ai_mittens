@@ -6,6 +6,7 @@
  *             v
  *     checkManifest() <--- sha256 of every file, at any depth, under
  *             |            criteria/ fixtures/ gold/cases/ verify/ loop/
+ *             |            and the hooks: .claude/hooks/ .claude/agents/ .claude/settings.json
  *             v
  *     [] when intact, else ["verify/run.ts (changed)", ...]
  *
@@ -35,7 +36,18 @@ const GOLD_CASES_DIR = "gold/cases";
 
 // The one list of fenced folders. The human's manifest comes from --print,
 // which reads this list, so the two cannot drift apart.
-export const FENCED_DIRS: readonly string[] = ["criteria", "fixtures", GOLD_CASES_DIR, "verify", "loop"];
+export const FENCED_DIRS: readonly string[] = [
+  "criteria",
+  "fixtures",
+  GOLD_CASES_DIR,
+  "verify",
+  "loop",
+
+  // The hooks that hold the builder. A builder that edits them removes its own fence.
+  ".claude/hooks",
+  ".claude/agents",
+  ".claude/settings.json",
+];
 
 // A cases folder outside the repository signs itself with this file.
 const HELD_OUT_MANIFEST = "MANIFEST.sha256";

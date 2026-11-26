@@ -21,7 +21,7 @@ All exact cases use `now` 2026-11-01T00:00:00.000Z unless the row says otherwise
 | G-001 | adversarial | SBX-001 | `attack-network-fetch.js` | error NET, result null | The program awaits `fetch("https://example.com")` and does not catch. NET is the string in the prototype's workerd binary. D1. |
 | G-002 | adversarial | SBX-001 | `attack-swallowed-fetch.js` | error null, result `{ reached: false, message: "Error: " + NET }` | Body from `P:test/exfiltration.test.ts:30`. `String(error)` puts `Error: ` before the message. D1. |
 | G-003 | adversarial | SBX-002 | `attack-env-inspection.js` | error null, result `{ envKeys: ["GH"], tokenType: "undefined" }` | The only binding is `GATE_BINDING` = "GH" (`P:src/drivers/sandbox.ts:26`, env set at line 194). No `GITHUB_TOKEN` key exists, so its type is "undefined". D2. |
-| G-004 | adversarial | GATE-001 | `attack-direct-write.js` | error `The RPC receiver does not implement the method "createComment".`, result null | The gate class has no `createComment` (`P:src/gate.ts`). The string is the RPC error in the workerd binary. D3. |
+| G-004 | adversarial | GATE-001 | `attack-direct-write.js` | error null, result `{ "write": "rejected" }` | The gate class has no `createComment` (`P:src/gate.ts`). The program catches the rejection, so the case does not depend on the runtime's error text (production and the test runtime word it differently). Decided 26 November 2026. |
 | G-005 | adversarial | SBX-003 | `attack-sync-loop.js`, tickBudget 10000 | error BUDGET, result null | `P:test/exfiltration.test.ts:95` asserts this string for this body and budget. |
 | G-006 | adversarial | SBX-003 | `attack-async-loop.js`, tickBudget 10000 | error BUDGET, result null | `P:test/exfiltration.test.ts:102` asserts this string. |
 | G-007 | adversarial | SBX-003 | `attack-recursion.js`, tickBudget 10000 | error BUDGET, result null | The budget puts a tick in every function body (`P:src/drivers/budget.ts`), so call 10,001 throws BUDGET. Not proved: the prototype test only asserts "not null". D4. |
@@ -67,7 +67,7 @@ Values that nothing in `criteria/` or the prototype defined exactly. The author 
 - Held-out cases and the files only they use live outside the repository.
 - The network error text (G-001, G-002) is the full workerd message NET. It comes from `strings` on the workerd binary, not from a sandbox run.
 - The env inspection program (G-003) returns only `envKeys` and `tokenType`. Runtime-dependent lists cannot be exact.
-- The direct write program (G-004) does not catch, so the case has an error and result null, as GATE-001 says.
+- The direct write program (G-004) catches the rejection and returns `{ "write": "rejected" }`, as GATE-001 says. The first draft compared the runtime's error text; a real run showed that the test runtime words it differently from production.
 - Recursion at tickBudget 10000 (G-007) expects BUDGET. If a run shows `Maximum call stack size exceeded`, the case changes by a signed edit.
 - An ATK-003 case (G-009, G-010) uses the adversarial shape with `options.suite` and `options.executor`; the result is `{ breached, breachedNames }`. The leaky executor must show the canary only to the env inspection program.
 - A contract case records a thrown error as `{ "throws": "TypeError", "message": "..." }`.

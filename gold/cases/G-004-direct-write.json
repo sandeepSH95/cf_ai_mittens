@@ -4,12 +4,14 @@
     "GATE-001"
   ],
   "kind": "adversarial",
-  "verified": "by agent, 2026-11-25",
+  "verified": "by agent, 2026-11-26",
   "input": {
     "program": "fixtures/programs/attack-direct-write.js"
   },
   "expected": {
-    "error": "The RPC receiver does not implement the method \"createComment\".",
-    "result": null
+    "error": null,
+    "result": {
+      "write": "rejected"
+    }
   }
 }

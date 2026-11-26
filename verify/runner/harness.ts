@@ -7,20 +7,21 @@
  *                         verify() --> { exit_code, uncovered }
  *   harness.fenceByte   temp repository: one signed case, then one byte added
  *                         verify() --> { exit_code, output_prefix, cases_run }
- *   harness.recordLine  needs loop/record.sh, which step S5 writes. Until a
- *                       human wires it, the fact is an error and the case fails.
+ *   harness.recordLine  temp folder as MITTENS_ROOT, with a last-run.json in it
+ *                         sh loop/record.sh <pass> <exit> --> { lines_appended, keys }
  *
  * A fact that cannot be computed is { error }, never a throw: this file runs
  * while the configuration loads, and a throw there would crash the verifier.
  */
 
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { GoldCase } from "../lint-case.ts";
 import { FENCED_DIRS, MANIFEST_PATH, manifestLines } from "../manifest.ts";
-import type { Json } from "../normalise.ts";
+import type { Json, JsonObject } from "../normalise.ts";
 import { verify } from "../run.ts";
 import type { HarnessFact, HarnessFacts } from "./registry.ts";
 import type { CaseRunner } from "./spawn.ts";
@@ -31,6 +32,13 @@ const CRITERIA_DIR = "criteria";
 const CASES_DIR = "gold/cases";
 const CASE_SUFFIX = ".json";
 const RECORD_SCRIPT = "loop/record.sh";
+const ARGS_KEY = "args";
+const LEDGER_PATH = "ledger/iterations.jsonl";
+const LAST_RUN_PATH = "ledger/last-run.json";
+const ROOT_VARIABLE = "MITTENS_ROOT";
+
+// What the verifier would have written before the pass is recorded.
+const SAMPLE_LAST_RUN = { passed: 1, failed: 1, failing: ["G-001"] };
 const ONE_BYTE = " ";
 
 // Example: "fence broken: gold/cases/G-001.json (changed)" -> "fence broken: ".
@@ -43,6 +51,9 @@ interface Scene {
 
   // The folder the cases of this run come from.
   readonly casesDir: string;
+
+  // The "args" of the case that names the call. Example: { pass: 0, exit_code: 1 }.
+  readonly args: JsonObject;
 }
 
 const COMPUTE: Readonly<Record<string, (scene: Scene) => Json>> = {
@@ -62,10 +73,16 @@ export function harnessFacts(root: string, casesDir: string, cases: GoldCase[]):
       continue;
     }
 
-    facts[call] = computeFact(call, { root, casesDir });
+    facts[call] = computeFact(call, { root, casesDir, args: argsOf(goldCase) });
   }
 
   return facts;
+}
+
+function argsOf(goldCase: GoldCase): JsonObject {
+  const args = goldCase.input[ARGS_KEY];
+
+  return typeof args === "object" && args !== null && !Array.isArray(args) ? (args as JsonObject) : {};
 }
 
 function computeFact(call: string, scene: Scene): HarnessFact {
@@ -98,13 +115,37 @@ function fenceByte(scene: Scene): Json {
   });
 }
 
-/** HARN-003. The script does not exist before step S5, and this file does not run it yet. */
+/** HARN-003: the script appends one line, with the keys the criterion names. */
 function recordLine(scene: Scene): Json {
-  if (!existsSync(path.join(scene.root, RECORD_SCRIPT))) {
-    throw new Error(`runs in step S5: ${RECORD_SCRIPT} does not exist`);
+  const script = path.join(scene.root, RECORD_SCRIPT);
+
+  if (!existsSync(script)) {
+    throw new Error(`needs ${RECORD_SCRIPT}, which does not exist`);
   }
 
-  throw new Error(`is not wired: a human decides in step S5 how ${RECORD_SCRIPT} runs without the real ledger`);
+  const temp = mkdtempSync(TEMP_PREFIX);
+
+  try {
+    mkdirSync(path.join(temp, path.dirname(LAST_RUN_PATH)), { recursive: true });
+    writeFileSync(path.join(temp, LAST_RUN_PATH), JSON.stringify(SAMPLE_LAST_RUN));
+
+    // The script writes below MITTENS_ROOT, so the real ledger is not touched.
+    const run = spawnSync("sh", [script, String(scene.args.pass), String(scene.args.exit_code)], {
+      env: { ...process.env, [ROOT_VARIABLE]: temp },
+      encoding: "utf8",
+    });
+
+    if (run.status !== 0) {
+      throw new Error(`${RECORD_SCRIPT} exited ${run.status}: ${(run.stderr ?? "").trim()}`);
+    }
+
+    const lines = readFileSync(path.join(temp, LEDGER_PATH), "utf8").split("\n").filter((line) => line !== "");
+    const last = JSON.parse(lines.at(-1) ?? "{}") as Record<string, unknown>;
+
+    return { lines_appended: lines.length, keys: Object.keys(last).sort() };
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
 }
 
 /** Builds a repository with the real criteria and empty fenced folders, then removes it. */

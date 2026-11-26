@@ -14,7 +14,7 @@
     "test": "npm test --workspaces --if-present",
     "verify": "sh verify/run.sh",
     "typecheck:verify": "tsc -p tsconfig.json",
-    "test:verify": "node --test verify/checks.test.ts"
+    "test:verify": "node --test verify/checks.test.ts loop/checks.test.ts"
   },
   "engines": {
     "node": ">=24"

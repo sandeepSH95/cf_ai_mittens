@@ -80,10 +80,10 @@ cf_ai_mittens/
 
 | Rule | Enforced by | What you see when it fires |
 | --- | --- | --- |
-| No Edit, Write or shell write under `criteria/`, `gold/cases/`, `gold/MANIFEST.sha256`, `verify/`, `loop/` | PreToolUse hook `.claude/hooks/deny-fenced.sh`, exit 2, matches tool paths and Bash command text | "fenced path: <path>. Stop and report." |
-| No pass ends red | Stop hook runs `sh verify/run.sh`; exit 2 while the verifier is not 0 | the verifier's summary and diffs as the reason you cannot stop |
+| In a builder pass (`MITTENS_LOOP=1`, set by the loop): no Edit, Write or shell write under `criteria/`, `fixtures/`, `gold/cases/`, `gold/MANIFEST.sha256`, `verify/`, `loop/` or the hook files in `.claude/`, and no access to `../mittens_holdout` | PreToolUse hook `.claude/hooks/guard.ts`, exit 2, matches tool paths and Bash command text. An interactive session with the human is held by the manifest only | "fenced path: <path>. Stop and report." |
+| No pass ends worse than it started | Stop hook `.claude/hooks/stop.ts` runs `sh verify/run.sh` in a builder pass; exit 2 when a case that passed at the start of the pass fails, or when the verifier exits 3 or 5. A pass may end red: the loop starts the next one | the regressed case ids and the verifier's last 40 lines |
 | No credential in the prompt record | the agent refuses to record a prompt that contains a credential-shaped string and says so | "Not recorded: the prompt contains a credential shape." |
-| No `wrangler secret`, `wrangler login`, `wrangler deploy` from an agent | PreToolUse hook on Bash | "deploy and secrets are human steps" |
+| No `wrangler secret`, `wrangler login`, `wrangler deploy` or `git push` from an agent, in every session | the same PreToolUse hook | "deploy and secrets are human steps", "git push is a human step" |
 | Gold set and verifier unchanged since the human signed them | `verify/manifest.ts` before every run; exit 3 on mismatch | "fence broken: <file>" and no cases run |
 | Every MUST has a case | `verify/coverage.ts`; exit 4 | "uncovered: SBX-004, GATE-002" |
 | Commits carry the prompt or "by hand" | `.gitmessage` template; reviewed by the human, not enforced | n/a |
@@ -98,8 +98,8 @@ cf_ai_mittens/
 | Unit tests inside workerd | `npm test` | vitest, all workspaces |
 | The verifier | `sh verify/run.sh` | exit 0, 1, 3, 4 or 5 (5 means the verifier crashed, not the build); one line per case; summary line; `ledger/last-run.json` |
 | Lint one gold case | `node verify/lint-case.js gold/drafts/G-004.json` | exit 0, or the first schema error |
-| Regenerate the manifest (human only) | `shasum -a 256 gold/cases/* verify/* loop/* > gold/MANIFEST.sha256` | file rewritten |
-| One loop run | `sh loop/loop.sh` | exits 0 (green), 1 (cap), 3 or 4 (human); ledger lines appended |
+| Regenerate the manifest (human only) | `node verify/manifest.ts --print > gold/MANIFEST.sha256` | file rewritten |
+| One loop run | `sh loop/loop.sh` | exits 0 (green), 1 (cap), 3, 4 or 5 (human); ledger lines appended |
 | Record a pass by hand | `sh loop/record.sh <pass> <exit-code>` | one line appended to `ledger/iterations.jsonl` |
 | Held-out run (human only) | `GOLD_DIR=../mittens_holdout sh verify/run.sh` | same output, flagged line in the ledger |
 | Demo offline | `npm run dev -w apps/mittens_demo` | `wrangler dev --local` on a free port; stub drivers |
@@ -180,10 +180,10 @@ Read first: `docs/AGENTIC_LOOP_STRATEGY.md` sections "Loop mechanics" and "Cost,
 
 Do:
 
-1. `.claude/hooks/deny-fenced.sh`: PreToolUse on Edit, Write, MultiEdit and Bash; exit 2 when the tool path, or any token in the Bash command, starts with a fenced folder.
-2. `.claude/hooks/deny-wrangler-secrets.sh`: PreToolUse on Bash; exit 2 on `wrangler secret`, `wrangler login`, `wrangler deploy`.
-3. Stop hook: `sh verify/run.sh`; exit 2 when it is not 0; print its last 40 lines to stderr.
-4. `loop/loop.sh`, `loop/record.sh`, `loop/caps.env` (`MAX_PASSES=12`, `PLATEAU=3`, `MAX_MINUTES=120`), `loop/PROMPT.md` (the standing instruction in section 9 of this file).
+1. `.claude/hooks/guard.ts`: PreToolUse on the file tools and Bash. In a builder pass, exit 2 when the tool path is fenced, or when a Bash command names a fenced path and does more than read it. Reads, `sh verify/run.sh` and the linter stay allowed.
+2. The same hook, in every session: exit 2 on `wrangler secret`, `wrangler login`, `wrangler deploy` and `git push`.
+3. Stop hook `.claude/hooks/stop.ts`, builder passes only: `sh verify/run.sh`; exit 2 on a regression or on exit 3 or 5; print the last 40 lines to stderr.
+4. `loop/loop.sh`, `loop/record.sh`, `loop/caps.env` (`MAX_PASSES=12`, `PLATEAU=3`, `MAX_MINUTES=120`, `PASS_MINUTES=30`), `loop/PROMPT.md` (the standing instruction in section 9 of this file).
 5. `.github/workflows/ci.yml`: install, types, typecheck, `sh verify/run.sh`, manifest check; publish job on a tag with provenance.
 6. `.claude/agents/reviewer.md`: tools Read, Grep, Glob only; reviews a diff against `criteria/` IDs.
 7. `AGENTS.md` under 200 lines: commands from section 5, layout, boundaries, gotchas from section 11, and "read docs/PLAN.md for the current step". `CLAUDE.md` with the single line `@AGENTS.md`.
@@ -301,12 +301,12 @@ The exact content of `loop/PROMPT.md`:
 You are one pass of a build loop. The verifier decides when the work is done. You do not.
 
 1. Read HANDOFF.md if it exists, then ledger/last-run.json.
-2. For each failing case id, read the criteria it covers in criteria/.
-3. Change only files under packages/ and apps/. Never touch criteria/, gold/, verify/ or loop/. If a case looks wrong, say so in HANDOFF.md and move on; a human owns those files.
+2. For each failing case id, read the criteria it covers in criteria/ and the contract in verify/runner/CONTRACT.md.
+3. Change only files under packages/ and apps/. Never touch criteria/, fixtures/, gold/, verify/, loop/ or .claude/. If a case looks wrong, say so in HANDOFF.md and move on; a human owns those files.
 4. Implement the criterion. Do not special-case the input of a gold case. A fix that only passes the case and not the criterion is a failure a held-out case will catch.
 5. Run: sh verify/run.sh. Read the diffs it prints.
-6. Fix the smallest set of failing cases you can finish in this pass.
-7. Commit with the template in .gitmessage: subject "Pass: <what you fixed>", body with the failing ids before and after.
+6. Fix the smallest set of failing cases you can finish in this pass. Do not break a case that passed when the pass started.
+7. Commit with the template in .gitmessage: subject "Pass: <what you fixed>", body with the failing ids before and after. Never push.
 8. Rewrite HANDOFF.md: what you changed, what still fails, what you suspect, under 40 lines.
 9. Stop.
 ```

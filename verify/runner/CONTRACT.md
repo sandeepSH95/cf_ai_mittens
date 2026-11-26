@@ -127,7 +127,7 @@ The report. Every key is always present. The runner compares only the keys a cas
 | `app.stateAfterStaleFlow` | `runScriptedCase` with the script code, `apply_writes`, text, and approval `approve`; then `{ last_program_is_script_program, last_ledger_facade_calls, runs }` from `agent_state` |
 | `harness.noCases` | computed in Node by `verify/runner/harness.ts`: the verifier on a temporary repository with the real criteria and no cases |
 | `harness.fenceByte` | computed in Node: the verifier on a temporary repository with one signed case and one byte added to it |
-| `harness.recordLine` | fails with one line until a human wires `loop/record.sh` in step S5. The builder cannot make this case pass. |
+| `harness.recordLine` | `sh loop/record.sh <pass> <exit-code>` with `MITTENS_ROOT` set to a temp folder; returns `{ lines_appended, keys }`. The builder cannot change this case: `loop/` is fenced. |
 
 ## 5. Adversarial cases with a suite
 

@@ -21,6 +21,9 @@ const RUNNER_CONFIG = path.join(import.meta.dirname, "vitest.config.ts");
 const REPORT_PATH = "ledger/runner-report.json";
 const STDERR_TAIL_CHARS = 2000;
 
+// A package that hangs must not hang the verifier. The full set runs in well under a minute.
+const RUNNER_TIMEOUT_MS = 10 * 60 * 1000;
+
 export const CaseStatus = {
   PASS: "PASS",
   FAIL: "FAIL",
@@ -67,8 +70,13 @@ export const runCasesInWorkerd: CaseRunner = (root, casesDir, cases) => {
   const child = spawnSync(
     process.execPath,
     [VITEST_ENTRY, "run", "--config", RUNNER_CONFIG, "--reporter=json", "--outputFile", reportFile],
-    { env: { ...process.env, MITTENS_ROOT: root, GOLD_DIR: casesDir }, encoding: "utf8" },
+    { env: { ...process.env, MITTENS_ROOT: root, GOLD_DIR: casesDir }, encoding: "utf8", timeout: RUNNER_TIMEOUT_MS },
   );
+
+  // spawnSync reports a timeout as an error and kills the child.
+  if (child.error) {
+    throw new Error(`case runner did not finish: ${child.error.message}`);
+  }
 
   const reported = readReport(reportFile, child.stderr ?? "");
 

@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The fence first: a changed gold case or verifier file fails the run here.
+      - name: Manifest
+        run: node verify/manifest.ts
+
+      - name: Typecheck the packages
+        run: npm run typecheck
+
+      - name: Typecheck the verifier, the loop and the hooks
+        run: npm run typecheck:verify
+
+      - name: Self-tests of the verifier, the loop and the hooks
+        run: npm run test:verify
+
+      - name: Package tests inside workerd
+        run: npm test
+
+      # Exit 0 only when every gold case passes. Red while the build is in progress.
+      - name: Gold set
+        run: sh verify/run.sh
