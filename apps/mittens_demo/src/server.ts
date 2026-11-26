@@ -6,7 +6,7 @@
  *                                                                   |  streamText({ model, tools: { code, apply_writes }, stopWhen: stepCountIs(6) })
  *                                                                   |
  *            +------------------------------------------------------+----------------------------------------+
- *            |  code tool -> SandboxExecutor (package mittens_sandbox)                                       |
+ *            |  code tool -> createSandbox() (package mittens_sandbox)                                       |
  *            |    env.LOADER.load({ modules: { main.js: shim, program.js: <model code> },                     |
  *            |                      env: { GH: ctx.exports.GitHubGate({ props: { runId } }) },               |
  *            |                      globalOutbound: null, limits: { cpuMs } })                               |

@@ -23,8 +23,9 @@ import {
   type RepoRef,
   type WriteReceipt
 } from "mittens_gate";
-import { StubGitHubDriver } from "./github-stub";
+import { StubGitHubDriver, type StubSource } from "./github-stub";
 
+export type { StubSource } from "./github-stub";
 export type { Comment, GitHubDriver, Issue, PullRequest, Repo, RepoRef, WriteReceipt } from "mittens_gate";
 export { GitHubDriverKind, IssueState, WriteKind, parseRepoRef, repoFromEnv } from "mittens_gate";
 
@@ -197,7 +198,12 @@ function repoPath(repo: RepoRef): string {
 export type GitHubDriverEnv = { GITHUB_DRIVER?: string; GITHUB_TOKEN?: string };
 
 /** Picks the driver from GITHUB_DRIVER. The stub needs no token. */
-export function createGitHubDriver(env: GitHubDriverEnv): GitHubDriver {
+export function createGitHubDriver(env: GitHubDriverEnv, source?: StubSource): GitHubDriver {
+  // A source names a fixture, so it always means the stub. Example: a verifier case.
+  if (source !== undefined) {
+    return new StubGitHubDriver(source);
+  }
+
   const kind = env.GITHUB_DRIVER ?? GitHubDriverKind.Stub;
 
   if (kind === GitHubDriverKind.Stub) {

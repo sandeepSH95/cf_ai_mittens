@@ -3,9 +3,9 @@
  * recording) and the two tools. The agent calls only this.
  */
 import type { LanguageModel, ToolSet } from "ai";
-import { createAgentTools, EXAMPLE_PROGRAM, FACADE_METHODS, SYSTEM_PROMPT, ToolName } from "mittens_gate";
-import { createSandbox } from "mittens_sandbox";
+import { createAgentTools, EXAMPLE_PROGRAM, SYSTEM_PROMPT, ToolName } from "mittens_gate";
 import { createModelDriver } from "../drivers/model";
+import { createRecordedExecutor } from "./executor";
 import { type Ledger, type LedgerRow } from "./ledger";
 import { createPlanApplier } from "./plan";
 
@@ -20,9 +20,8 @@ export type TurnOptions = {
 export type Turn = { model: LanguageModel; modelId: string; tools: ToolSet; system: string };
 
 export function prepareTurn(env: Env, options: TurnOptions): Turn {
-  const executor = createSandbox(env, {
+  const executor = createRecordedExecutor(env, {
     gate: options.gate,
-    methods: FACADE_METHODS,
     onRun: (run) => {
       const row = options.ledger.recordRun(run);
       options.onRecorded?.(row);

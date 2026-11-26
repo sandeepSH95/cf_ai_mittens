@@ -12,7 +12,10 @@
  *   isolate_start_ms  LOADER.load() to the first facade call
  *   tokens_in/out     from the AI SDK step usage, attached after the step ends (null until then)
  */
-import type { SandboxRun } from "mittens_sandbox";
+import type { SandboxOutcome } from "mittens_sandbox";
+
+/** One program run: what the sandbox reported, plus the program text and the time the host measured. */
+export type ProgramRun = SandboxOutcome & { code: string; durationMs: number };
 
 /** One program is produced by exactly one model round trip. The comparison is with N tool calls. */
 export const ROUND_TRIPS_PER_PROGRAM = 1;
@@ -56,7 +59,7 @@ export class Ledger {
   }
 
   /** Stores one run. Tokens are unknown at this point; see attachUsage. */
-  recordRun(run: SandboxRun): LedgerRow {
+  recordRun(run: ProgramRun): LedgerRow {
     const inserted = this.#sql
       .exec(
         `INSERT INTO ledger (created_at, program, result_json, error, facade_calls, round_trips, isolate_start_ms, duration_ms)
@@ -102,7 +105,8 @@ export class Ledger {
 }
 
 function truncateJson(value: unknown): string | null {
-  if (value === undefined) {
+  // The sandbox reports null for a failed run and for a program that returned nothing.
+  if (value === undefined || value === null) {
     return null;
   }
 

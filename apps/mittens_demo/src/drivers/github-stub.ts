@@ -5,7 +5,7 @@
  * pull request 101 is always 90 days old, whatever today is.
  * Writes are recorded in memory so tests can assert what was applied.
  */
-import fixture from "../fixtures/github.json";
+import defaultFixture from "../fixtures/github.json";
 import {
   GitHubDriverKind,
   IssueState,
@@ -36,6 +36,13 @@ type FixturePull = {
 };
 type FixtureIssue = Omit<FixturePull, "draft">;
 type FixtureComment = { id: number; author: string; body: string; createdDaysAgo: number };
+type Fixture = typeof defaultFixture;
+
+/**
+ * Replaces the built-in fixture and the clock. For tests and the verifier.
+ * Example: { fixture: "<JSON text in the shape of github.json>", now: "2026-11-01T00:00:00Z" }.
+ */
+export type StubSource = { fixture: string; now: string };
 
 function daysAgo(now: number, days: number): string {
   return new Date(now - days * DAY_MS).toISOString();
@@ -49,7 +56,9 @@ export class StubGitHubDriver implements GitHubDriver {
   readonly #repo: Repo;
   readonly #writes: WriteReceipt[] = [];
 
-  constructor(now: number = Date.now()) {
+  constructor(source?: StubSource) {
+    const fixture = source === undefined ? defaultFixture : (JSON.parse(source.fixture) as Fixture);
+    const now = source === undefined ? Date.now() : Date.parse(source.now);
     const base = `${FIXTURE_URL_BASE}/${fixture.repo.fullName}`;
 
     this.#repo = { ...fixture.repo };

@@ -5,7 +5,8 @@
   "type": "module",
   "description": "The demo: the chat agent, the gate entrypoint, the GitHub and model drivers, the ledger and the React page.",
   "exports": {
-    ".": "./src/server.ts"
+    ".": "./src/server.ts",
+    "./testing": "./src/testing.ts"
   },
   "types": "./src/server.ts",
   "scripts": {

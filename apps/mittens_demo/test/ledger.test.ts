@@ -56,7 +56,7 @@ describe("KCM-004 ledger", () => {
   it("attachUsage fills in tokens from the model step", async () => {
     const rows = await inAgent(async (state) => {
       const ledger = new Ledger(state.storage.sql);
-      const row = ledger.recordRun({ code: "async () => 1", result: 1, error: null, logs: [], facadeCalls: 0, isolateStartMs: null, durationMs: 3 });
+      const row = ledger.recordRun({ code: "async () => 1", result: 1, error: null, facadeCalls: 0, isolateStartMs: null, durationMs: 3 });
       ledger.attachUsage(row.id, { inputTokens: 120, outputTokens: 80 });
       return { before: row, after: ledger.get(row.id), count: ledger.list().length };
     });

@@ -12,9 +12,10 @@
  */
 import { WorkerEntrypoint } from "cloudflare:workers";
 import type { Facade } from "mittens_gate";
-import { createFacade } from "./services/facade";
+import { createFacade, type FacadeSource } from "./services/facade";
 
-export type GateProps = { runId: string };
+/** `source` is set by the testing entry only: the reads then come from that fixture. */
+export type GateProps = { runId: string; source?: FacadeSource };
 
 export class GitHubGate extends WorkerEntrypoint<Env, GateProps> {
   listPullRequests(input?: unknown) {
@@ -38,6 +39,6 @@ export class GitHubGate extends WorkerEntrypoint<Env, GateProps> {
   }
 
   #facade(): Facade {
-    return createFacade(this.env);
+    return createFacade(this.env, this.ctx.props.source);
   }
 }

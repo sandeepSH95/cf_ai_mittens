@@ -3,20 +3,20 @@
  *
  *   host (Durable Object)                         fresh V8 isolate per run
  *   ──────────────────────                        ─────────────────────────
- *   SandboxExecutor.execute(code)                 main.js  (shim, fixed)
+ *   createSandbox(...).execute(program)           main.js  (shim, fixed)
  *     normalizeCode  -> async () => {...}           - builds `github.*` wrappers over env.GH
  *     applyBudget    -> __tick() in every loop      - counts facade calls, time of first call
  *     LOADER.load({                                 - captures console, races a timeout
- *       env: { GH: <loopback to GitHubGate> },    program.js (the model's code, spliced in)
+ *       env: { GH: <the gate handle> },           program.js (the model's code, spliced in)
  *       globalOutbound: null,  <- no fetch/connect   export default (github, __tick) => (<code>)
  *       limits: { cpuMs }      <- production stop
  *     })                                     RPC: github.listPullRequests(x) -> env.GH.listPullRequests(x)
  *
  * Security options are fixed here and cannot be overridden by callers:
  * globalOutbound is always null, the env holds exactly one binding (GH), and
- * no secret is ever placed in the dynamic worker's env.
+ * no secret is ever placed in the dynamic worker's env. createSandbox refuses
+ * every option it does not know, so no caller can add one.
  */
-import type { ExecuteResult, Executor, ResolvedProvider } from "@cloudflare/codemode";
 import { normalizeCode } from "@cloudflare/codemode";
 import { applyBudget, TICK_IDENTIFIER } from "./budget";
 
@@ -43,45 +43,51 @@ export const SandboxStop = { Budget: "budget", Timeout: "timeout" } as const;
 export const BUDGET_ERROR_MESSAGE = "Program stopped: iteration budget exceeded (runaway loop or recursion)";
 export const TIMEOUT_ERROR_MESSAGE = "Program stopped: execution timed out";
 
-export type SandboxRun = {
-  code: string;
+/** What execute(program) resolves to. All four keys are always present. */
+export type SandboxOutcome = {
+  /** The value the program returned. Null when it failed or returned nothing. */
   result: unknown;
   error: string | null;
-  logs: string[];
-  /** Facade calls made by this one program (RPC calls to the gate). */
+  /** Gate calls made by this one program (RPC calls to the host). */
   facadeCalls: number;
-  /** Milliseconds from LOADER.load() to the first facade call. Null when the program made none. */
+  /** Milliseconds from LOADER.load() to the first gate call. Null when the program made none. */
   isolateStartMs: number | null;
-  durationMs: number;
 };
 
 export type SandboxOptions = {
-  /** Loopback service binding to GitHubGate. The host creates it with ctx.exports. */
+  /** The Worker Loader binding. Example: env.LOADER. */
+  loader: WorkerLoader;
+  /** Loopback handle to the gate entrypoint. The host creates it with ctx.exports. */
   gate: Fetcher;
-  /** Facade method names exposed as `github.<name>` inside the isolate. */
-  methods: readonly string[];
+  tickBudget?: number;
   timeoutMs?: number;
   cpuMs?: number;
-  tickBudget?: number;
-  /** Called once per run with the measurements for the ledger. */
-  onRun?: (run: SandboxRun) => void;
 };
+
+export type Sandbox = { execute(program: string): Promise<SandboxOutcome> };
+
+const SandboxOption = { Loader: "loader", Gate: "gate", TickBudget: "tickBudget", TimeoutMs: "timeoutMs", CpuMs: "cpuMs" } as const;
+const REQUIRED_OPTIONS: readonly string[] = [SandboxOption.Loader, SandboxOption.Gate];
+const NUMBER_OPTIONS: readonly string[] = [SandboxOption.TickBudget, SandboxOption.TimeoutMs, SandboxOption.CpuMs];
+const KNOWN_OPTIONS: readonly string[] = [...REQUIRED_OPTIONS, ...NUMBER_OPTIONS];
+const ERROR_PREFIX = "createSandbox:";
+
+type Limits = { tickBudget: number; timeoutMs: number; cpuMs: number };
 
 type ShimOutcome = {
   result?: unknown;
   error?: string;
-  logs: string[];
   facadeCalls: number;
   firstCallAt: number | null;
 };
 
 type ShimEntrypoint = {
-  run(options: { methods: string[]; budget: number; timeoutMs: number }): Promise<ShimOutcome>;
+  run(options: { budget: number; timeoutMs: number }): Promise<ShimOutcome>;
 };
 
 /**
  * Fixed shim loaded as the isolate's main module. It never changes per run.
- * The program only ever receives the frozen `github` object and `__tick`.
+ * The program only ever receives the `github` proxy and `__tick`.
  */
 const SHIM_SOURCE = `
 import { WorkerEntrypoint } from "cloudflare:workers";
@@ -92,24 +98,21 @@ const TIMEOUT_ERROR = ${JSON.stringify(TIMEOUT_ERROR_MESSAGE)};
 
 export default class Sandbox extends WorkerEntrypoint {
   async run(options) {
-    const logs = [];
     const metrics = { facadeCalls: 0, firstCallAt: null };
-    const capture = (prefix) => (...args) => { logs.push(prefix + args.map(String).join(" ")); };
-    console.log = capture("");
-    console.warn = capture("[warn] ");
-    console.error = capture("[error] ");
 
-    // Every facade call is an RPC to the gate on the host. Count it.
+    // Every property of \`github\` is a call to the gate on the host. Count it.
+    // Example: github.listPullRequests(x) -> env.${GATE_BINDING}.listPullRequests(x).
+    // The gate decides which methods exist; a write method is rejected there.
     const gate = this.env.${GATE_BINDING};
-    const facade = {};
-    for (const method of options.methods) {
-      facade[method] = async (input) => {
-        metrics.facadeCalls += 1;
-        if (metrics.firstCallAt === null) { metrics.firstCallAt = Date.now(); }
-        return gate[method](input === undefined ? {} : input);
-      };
-    }
-    Object.freeze(facade);
+    const forward = (method) => async (input) => {
+      metrics.facadeCalls += 1;
+      if (metrics.firstCallAt === null) { metrics.firstCallAt = Date.now(); }
+      return gate[method](input === undefined ? {} : input);
+    };
+    const facade = new Proxy(Object.freeze({}), {
+      // "then" stays undefined so \`await github\` does not turn into a gate call.
+      get: (_target, method) => (typeof method !== "string" || method === "then" ? undefined : forward(method))
+    });
 
     let ticks = 0;
     const tick = () => {
@@ -125,9 +128,9 @@ export default class Sandbox extends WorkerEntrypoint {
     try {
       const program = makeProgram(facade, tick);
       const result = await Promise.race([program(), timeout]);
-      return { result, logs, ...metrics };
+      return { result, ...metrics };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error), logs, ...metrics };
+      return { error: error instanceof Error ? error.message : String(error), ...metrics };
     } finally {
       clearTimeout(timer);
     }
@@ -140,99 +143,107 @@ function programModule(instrumented: string): string {
 }
 
 /**
- * Implements the @cloudflare/codemode Executor contract so createCodeTool can
- * drive it. The `providers` argument is accepted for the contract but the
- * host-side functions in it are not used: calls go to the gate over RPC so
- * the program and the token are never in the same isolate.
+ * Builds the sandbox. The returned object has one own key, `execute`.
+ * Throws a TypeError on an unknown option, a missing loader or gate, or a
+ * limit that is not a positive number.
+ * Example: createSandbox({ loader: env.LOADER, gate, tickBudget: 10_000 }).
  */
-export class SandboxExecutor implements Executor {
-  readonly #loader: WorkerLoader;
-  readonly #gate: Fetcher;
-  readonly #methods: string[];
-  readonly #timeoutMs: number;
-  readonly #cpuMs: number;
-  readonly #tickBudget: number;
-  readonly #onRun: ((run: SandboxRun) => void) | undefined;
+export function createSandbox(options: SandboxOptions): Sandbox {
+  const limits = checkOptions(options);
+  const { loader, gate } = options;
 
-  constructor(loader: WorkerLoader, options: SandboxOptions) {
-    this.#loader = loader;
-    this.#gate = options.gate;
-    this.#methods = [...options.methods];
-    this.#timeoutMs = Math.max(MIN_TIMEOUT_MS, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-    this.#cpuMs = Math.max(MIN_CPU_MS, options.cpuMs ?? DEFAULT_CPU_MS);
-    this.#tickBudget = Math.max(MIN_TICK_BUDGET, options.tickBudget ?? DEFAULT_TICK_BUDGET);
-    this.#onRun = options.onRun;
-  }
-
-  async execute(code: string, _providers?: ResolvedProvider[] | Record<string, unknown>): Promise<ExecuteResult> {
-    const run = await this.run(code);
-
-    if (run.error !== null) {
-      return { result: undefined, error: run.error, logs: run.logs };
-    }
-
-    return { result: run.result, logs: run.logs };
-  }
-
-  /** Runs one program and returns the measurements. Never throws. */
-  async run(code: string): Promise<SandboxRun> {
-    const startedAt = Date.now();
-    const budgeted = applyBudget(normalizeCode(code));
-
-    if (!budgeted.ok) {
-      return this.#finish({ code, result: undefined, error: budgeted.error, logs: [], facadeCalls: 0, isolateStartMs: null, durationMs: Date.now() - startedAt });
-    }
-
-    const worker = this.#loader.load({
-      compatibilityDate: SANDBOX_COMPAT_DATE,
-      mainModule: MAIN_MODULE,
-      modules: {
-        [MAIN_MODULE]: SHIM_SOURCE,
-        [PROGRAM_MODULE]: programModule(budgeted.code)
-      },
-      // The only binding. A loopback stub to GitHubGate; it carries no token bytes.
-      env: { [GATE_BINDING]: this.#gate },
-      // No network at all: fetch() and connect() throw inside the isolate.
-      globalOutbound: null,
-      // Production hard stop. Local workerd ignores it; see budget.ts.
-      limits: { cpuMs: this.#cpuMs }
-    });
-
-    const entrypoint = worker.getEntrypoint() as unknown as ShimEntrypoint;
-    let outcome: ShimOutcome;
-
-    try {
-      outcome = await Promise.race([
-        entrypoint.run({ methods: this.#methods, budget: this.#tickBudget, timeoutMs: this.#timeoutMs }),
-        hostTimeout(this.#timeoutMs + HOST_GRACE_MS)
-      ]);
-    } catch (error) {
-      outcome = { error: error instanceof Error ? error.message : String(error), logs: [], facadeCalls: 0, firstCallAt: null };
-    } finally {
-      dispose(entrypoint);
-      dispose(worker);
-    }
-
-    return this.#finish({
-      code,
-      result: outcome.result,
-      error: outcome.error ?? null,
-      logs: outcome.logs ?? [],
-      facadeCalls: outcome.facadeCalls,
-      isolateStartMs: outcome.firstCallAt === null ? null : outcome.firstCallAt - startedAt,
-      durationMs: Date.now() - startedAt
-    });
-  }
-
-  #finish(run: SandboxRun): SandboxRun {
-    this.#onRun?.(run);
-    return run;
-  }
+  return { execute: (program) => runProgram(loader, gate, limits, program) };
 }
 
-/** Builds the executor. Callers pass the whole env; only this file reads LOADER. */
-export function createSandbox(env: { LOADER: WorkerLoader }, options: SandboxOptions): SandboxExecutor {
-  return new SandboxExecutor(env.LOADER, options);
+// Refuses what the caller must not set (example: globalOutbound) before anything is loaded.
+function checkOptions(options: SandboxOptions): Limits {
+  if (typeof options !== "object" || options === null) {
+    throw new TypeError(`${ERROR_PREFIX} options must be an object`);
+  }
+
+  const given = options as Record<string, unknown>;
+
+  for (const key of Object.keys(given)) {
+    if (!KNOWN_OPTIONS.includes(key)) {
+      throw new TypeError(`${ERROR_PREFIX} unknown option '${key}'`);
+    }
+  }
+
+  for (const key of REQUIRED_OPTIONS) {
+    if (given[key] === undefined || given[key] === null) {
+      throw new TypeError(`${ERROR_PREFIX} option '${key}' is required`);
+    }
+  }
+
+  for (const key of NUMBER_OPTIONS) {
+    const value = given[key];
+
+    if (value !== undefined && !(typeof value === "number" && Number.isFinite(value) && value > 0)) {
+      throw new TypeError(`${ERROR_PREFIX} option '${key}' must be a positive number`);
+    }
+  }
+
+  return {
+    tickBudget: Math.max(MIN_TICK_BUDGET, options.tickBudget ?? DEFAULT_TICK_BUDGET),
+    timeoutMs: Math.max(MIN_TIMEOUT_MS, options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+    cpuMs: Math.max(MIN_CPU_MS, options.cpuMs ?? DEFAULT_CPU_MS)
+  };
+}
+
+/** Runs one program in a fresh isolate. Never rejects: a failure is in `error`. */
+async function runProgram(loader: WorkerLoader, gate: Fetcher, limits: Limits, program: string): Promise<SandboxOutcome> {
+  const startedAt = Date.now();
+  let outcome: ShimOutcome;
+
+  try {
+    outcome = await runInIsolate(loader, gate, limits, program);
+  } catch (error) {
+    outcome = { error: error instanceof Error ? error.message : String(error), facadeCalls: 0, firstCallAt: null };
+  }
+
+  const failed = outcome.error !== undefined;
+
+  return {
+    result: failed ? null : (outcome.result ?? null),
+    error: outcome.error ?? null,
+    facadeCalls: outcome.facadeCalls,
+    isolateStartMs: outcome.firstCallAt === null ? null : outcome.firstCallAt - startedAt
+  };
+}
+
+async function runInIsolate(loader: WorkerLoader, gate: Fetcher, limits: Limits, program: string): Promise<ShimOutcome> {
+  const budgeted = applyBudget(normalizeCode(String(program)));
+
+  if (!budgeted.ok) {
+    return { error: budgeted.error, facadeCalls: 0, firstCallAt: null };
+  }
+
+  const worker = loader.load({
+    compatibilityDate: SANDBOX_COMPAT_DATE,
+    mainModule: MAIN_MODULE,
+    modules: {
+      [MAIN_MODULE]: SHIM_SOURCE,
+      [PROGRAM_MODULE]: programModule(budgeted.code)
+    },
+    // The only binding. A loopback stub to the gate; it carries no token bytes.
+    env: { [GATE_BINDING]: gate },
+    // No network at all: fetch() and connect() throw inside the isolate.
+    globalOutbound: null,
+    // Production hard stop. Local workerd ignores it; see budget.ts.
+    limits: { cpuMs: limits.cpuMs }
+  });
+
+  const entrypoint = worker.getEntrypoint() as unknown as ShimEntrypoint;
+
+  try {
+    return await Promise.race([
+      entrypoint.run({ budget: limits.tickBudget, timeoutMs: limits.timeoutMs }),
+      hostTimeout(limits.timeoutMs + HOST_GRACE_MS)
+    ]);
+  } finally {
+    dispose(entrypoint);
+    dispose(worker);
+  }
 }
 
 function hostTimeout(ms: number): Promise<never> {

@@ -6,21 +6,21 @@
  * us its DurableObjectState). The agent instance itself is not used.
  */
 import { env, runInDurableObject } from "cloudflare:test";
-import { createAgentTools, FACADE_METHODS, ToolName } from "mittens_gate";
-import { createSandbox, type SandboxRun } from "mittens_sandbox";
+import { createAgentTools, ToolName } from "mittens_gate";
 import type { CoderAgent } from "../src/server";
-import { Ledger, type LedgerRow } from "../src/services/ledger";
+import { createRecordedExecutor } from "../src/services/executor";
+import { Ledger, type LedgerRow, type ProgramRun } from "../src/services/ledger";
 
 export const TEST_RUN_ID = "test-run";
 const SANDBOX_AGENT = "sandbox-tests";
 
 export type RunOptions = { timeoutMs?: number; tickBudget?: number };
-export type LedgerOutcome = { run: SandboxRun; row: LedgerRow | null };
+export type LedgerOutcome = { run: ProgramRun; row: LedgerRow | null };
 
-export function runProgram(code: string, options: RunOptions = {}): Promise<SandboxRun> {
+export function runProgram(code: string, options: RunOptions = {}): Promise<ProgramRun> {
   return inAgent(async (state) => {
     const gate = state.exports.GitHubGate({ props: { runId: TEST_RUN_ID } });
-    const sandbox = createSandbox(env, { gate, methods: FACADE_METHODS, ...options });
+    const sandbox = createRecordedExecutor(env, { gate, limits: options });
     return sandbox.run(code);
   });
 }
@@ -30,7 +30,7 @@ export function runRecorded(code: string): Promise<LedgerOutcome> {
   return inAgent(async (state) => {
     const ledger = new Ledger(state.storage.sql);
     const gate = state.exports.GitHubGate({ props: { runId: TEST_RUN_ID } });
-    const sandbox = createSandbox(env, { gate, methods: FACADE_METHODS, onRun: (run) => ledger.recordRun(run) });
+    const sandbox = createRecordedExecutor(env, { gate, onRun: (run) => ledger.recordRun(run) });
     const run = await sandbox.run(code);
     return { run, row: ledger.latest() };
   });
@@ -43,7 +43,7 @@ export function runRecorded(code: string): Promise<LedgerOutcome> {
 export function runThroughCodeTool(code: string): Promise<unknown> {
   return inAgent(async (state) => {
     const gate = state.exports.GitHubGate({ props: { runId: TEST_RUN_ID } });
-    const executor = createSandbox(env, { gate, methods: FACADE_METHODS });
+    const executor = createRecordedExecutor(env, { gate });
     const tools = createAgentTools({ executor, applyPlan: async () => ({ applied: [], failed: [] }) });
     const codeTool = tools[ToolName.Code];
 

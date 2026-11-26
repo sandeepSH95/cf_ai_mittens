@@ -1,54 +1,126 @@
 /**
  * Runs the attack programs against any executor.
  *
- *   attackSandbox(executorFor)
- *        |  for each attack: executorFor(attack.limits)  -> { run(code) }
+ *   attackSandbox({ execute, canary })
+ *        |  for each attack, in the order of ATTACK_PROGRAMS:
  *        v
- *   executor.run(attack.code)  -> { result, error }
+ *   execute(attack.code)  -> whatever the executor reports (result, error, logs, ...)
+ *        |
+ *        v  do the canary's bytes appear anywhere in it?
+ *   { name, outcome: "held" | "breached", detail }
  *        |
  *        v
- *   AttackOutcome { name, criterion, result, error, durationMs }
+ *   { cases: [...], breached: <count of breached cases> }
  *
- * This package runs the programs and reports what came back. The caller
- * asserts on the outcomes, because the expected values belong to the
- * executor under test (its error messages, its binding names).
+ * The suite judges one thing: the token must not come back. What an executor
+ * returns for a held attack (its error text, its binding names) belongs to
+ * the executor, so its own tests assert on that.
  */
-import { ATTACK_NAMES, ATTACK_PROGRAMS, type AttackCriterion, type AttackLimits, type AttackName } from "./programs";
+import { ATTACK_PROGRAMS, type AttackProgram } from "./programs";
 
-/** What an executor must return for one program. Never throws: a failure is in `error`. */
-export type AttackRun = { result: unknown; error: string | null };
+export const AttackOutcome = { Held: "held", Breached: "breached" } as const;
+export type AttackOutcome = (typeof AttackOutcome)[keyof typeof AttackOutcome];
 
-/** The executor contract. Example: mittens_sandbox's SandboxExecutor. */
-export type AttackExecutor = { run(code: string): Promise<AttackRun> };
+/** Any executor. Example: the `execute` of mittens_sandbox's createSandbox. */
+export type AttackExecute = (program: string) => unknown;
 
-/** Builds an executor with the limits one attack asks for. */
-export type ExecutorFactory = (limits: AttackLimits) => AttackExecutor;
+export type AttackOptions = { execute: AttackExecute; canary: string };
+export type AttackCase = { name: string; outcome: AttackOutcome; detail: string };
+export type AttackReport = { cases: AttackCase[]; breached: number };
 
-export type AttackOutcome = {
-  name: AttackName;
-  criterion: AttackCriterion;
-  result: unknown;
-  error: string | null;
-  /** Milliseconds the executor took for this program, measured by the caller side. */
-  durationMs: number;
-};
+const EXECUTE_ERROR = "attackSandbox: execute must be a function";
+const CANARY_ERROR = "attackSandbox: canary must be a non-empty string";
+const HELD_DETAIL = "the canary is not in the result, the error or the logs";
+const BREACHED_DETAIL = "the canary came back from the executor";
 
-/** Runs one attack program and returns what the executor reported. */
-export async function runAttack(executorFor: ExecutorFactory, name: AttackName): Promise<AttackOutcome> {
-  const attack = ATTACK_PROGRAMS[name];
-  const startedAt = Date.now();
-  const run = await executorFor(attack.limits).run(attack.code);
-
-  return { name, criterion: attack.criterion, result: run.result, error: run.error, durationMs: Date.now() - startedAt };
-}
-
-/** Runs the named attacks in order (default: all of them), one fresh executor per attack. */
-export async function attackSandbox(executorFor: ExecutorFactory, names: readonly AttackName[] = ATTACK_NAMES): Promise<AttackOutcome[]> {
-  const outcomes: AttackOutcome[] = [];
-
-  for (const name of names) {
-    outcomes.push(await runAttack(executorFor, name));
+/** Runs every attack in order and reports which ones got the canary out. */
+export async function attackSandbox(options: AttackOptions): Promise<AttackReport> {
+  if (typeof options?.execute !== "function") {
+    throw new TypeError(EXECUTE_ERROR);
   }
 
-  return outcomes;
+  if (typeof options.canary !== "string" || options.canary === "") {
+    throw new TypeError(CANARY_ERROR);
+  }
+
+  const cases: AttackCase[] = [];
+
+  for (const attack of ATTACK_PROGRAMS) {
+    cases.push(await runAttack(options, attack));
+  }
+
+  const breached = cases.filter((attackCase) => attackCase.outcome === AttackOutcome.Breached).length;
+
+  return { cases, breached };
+}
+
+async function runAttack(options: AttackOptions, attack: AttackProgram): Promise<AttackCase> {
+  let reported: unknown;
+
+  // An executor that throws still reports something: its error can carry the canary.
+  try {
+    reported = await options.execute(attack.code);
+  } catch (error) {
+    reported = error;
+  }
+
+  if (holdsCanary(reported, options.canary)) {
+    return { name: attack.name, outcome: AttackOutcome.Breached, detail: BREACHED_DETAIL };
+  }
+
+  return { name: attack.name, outcome: AttackOutcome.Held, detail: HELD_DETAIL };
+}
+
+// Looks at every string the executor reported: values, object keys, error
+// messages, whatever the nesting. Example: { result: { env: { T: "<canary>" } } } holds it.
+function holdsCanary(reported: unknown, canary: string): boolean {
+  const seen = new Set<object>();
+  const pending: unknown[] = [reported];
+
+  while (pending.length > 0) {
+    const value = pending.pop();
+
+    if (typeof value === "function" || (typeof value === "object" && value !== null)) {
+      if (seen.has(value)) {
+        continue;
+      }
+
+      seen.add(value);
+      pending.push(...textOf(value), ...parts(value));
+      continue;
+    }
+
+    if (String(value).includes(canary)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// An Error keeps its message and stack on properties that are not enumerable.
+function textOf(value: object): string[] {
+  if (!(value instanceof Error)) {
+    return [];
+  }
+
+  return [value.name, value.message, value.stack ?? ""];
+}
+
+// The keys and the values of an object or the items of a list. A value that
+// throws when it is read (a proxy, a getter) is left out.
+function parts(value: object): unknown[] {
+  try {
+    if (value instanceof Map) {
+      return [...value.keys(), ...value.values()];
+    }
+
+    if (value instanceof Set) {
+      return [...value];
+    }
+
+    return [...Object.keys(value), ...Object.values(value)];
+  } catch {
+    return [];
+  }
 }
