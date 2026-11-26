@@ -216,3 +216,8 @@ logged in proceed with live checks
 ## 2026-11-26T17:15:00Z, session dfdda72e, HEAD 12ce184
 
 An open live model on a public URL is not acceptable. The demo should not be live, but it shoudl be buildable by anyone who has access to the repo to deploy themselves
+
+## 2026-11-26T17:45:48Z, session dfdda72e, HEAD 131c871
+
+Please populat eth ereadme. The framing of this project is:
+An experiment in containing prompt injection by running model-written code in a Cloudflare isolate that holds no secret and has no write path, built by an agent loop that a fixed gold set judges.

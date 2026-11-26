@@ -2,7 +2,7 @@
   "name": "cf_ai_mittens",
   "version": "0.0.0",
   "private": true,
-  "description": "Mittens for AI agents: read anything, touch nothing, ask before you write.",
+  "description": "An experiment in containing prompt injection: model-written code runs in a Cloudflare isolate with no secret and no write path.",
   "license": "MIT",
   "workspaces": [
     "packages/*",
