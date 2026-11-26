@@ -11,9 +11,13 @@
  *
  * The sandbox reports four values and nothing else. This service adds the
  * program text and the duration, and gives the tool the shape it expects.
+ *
+ * The sandbox counts gate calls inside the isolate, where the program can
+ * skip the count. With a meter, the host's count replaces that one.
  */
 import type { ExecuteResult, Executor } from "@cloudflare/codemode";
 import { createSandbox } from "mittens_sandbox";
+import type { GateMeter } from "./gate-meter";
 import type { ProgramRun } from "./ledger";
 
 export type RecordedExecutorOptions = {
@@ -21,6 +25,8 @@ export type RecordedExecutorOptions = {
   gate: Fetcher;
   /** Limits for tests. Empty means the sandbox defaults. */
   limits?: { tickBudget?: number; timeoutMs?: number };
+  /** The host's count of gate calls. Without it the run keeps the count of the sandbox. */
+  meter?: GateMeter;
   /** Called once per run with the measurements for the ledger. */
   onRun?: (run: ProgramRun) => void;
 };
@@ -32,8 +38,10 @@ export function createRecordedExecutor(env: { LOADER: WorkerLoader }, options: R
 
   const run = async (code: string): Promise<ProgramRun> => {
     const startedAt = Date.now();
+    options.meter?.start();
+
     const outcome = await sandbox.execute(code);
-    const programRun = { ...outcome, code, durationMs: Date.now() - startedAt };
+    const programRun = { ...outcome, ...hostCount(options.meter, startedAt), code, durationMs: Date.now() - startedAt };
 
     options.onRun?.(programRun);
     return programRun;
@@ -51,4 +59,15 @@ export function createRecordedExecutor(env: { LOADER: WorkerLoader }, options: R
   };
 
   return { execute, run };
+}
+
+// Example: 1 call, 12 ms after the start, gives { facadeCalls: 1, isolateStartMs: 12 }.
+function hostCount(meter: GateMeter | undefined, startedAt: number): Partial<Pick<ProgramRun, "facadeCalls" | "isolateStartMs">> {
+  if (meter === undefined) {
+    return {};
+  }
+
+  const use = meter.read();
+
+  return { facadeCalls: use.calls, isolateStartMs: use.firstCallAt === null ? null : use.firstCallAt - startedAt };
 }

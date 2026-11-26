@@ -7,6 +7,7 @@ import type { LanguageModel, ToolSet } from "ai";
 import { createAgentTools, EXAMPLE_PROGRAM, MAX_STEPS, SYSTEM_PROMPT, ToolName, type GitHubReads, type GitHubWrites } from "mittens_gate";
 import { createRecordedExecutor } from "./executor";
 import { createReads } from "./facade";
+import type { GateMeter } from "./gate-meter";
 import { type Ledger, type LedgerRow } from "./ledger";
 import { createWrites } from "./plan";
 import { modelDriverFor } from "./seam";
@@ -15,6 +16,8 @@ export type TurnOptions = {
   /** Loopback binding to GitHubGate, made by the agent with ctx.exports. */
   gate: Fetcher;
   ledger: Ledger;
+  /** The host's count of gate calls for this turn's gate handle. */
+  meter?: GateMeter;
   /** Called after each program run was written to the ledger. */
   onRecorded?: (row: LedgerRow) => void;
   /** The name of the agent instance. A test replaces the drivers of one agent by it (services/seam.ts). */
@@ -42,6 +45,7 @@ export function createGateParts(env: Env, executor: Executor, scope?: string): G
 export function prepareTurn(env: Env, options: TurnOptions): Turn {
   const executor = createRecordedExecutor(env, {
     gate: options.gate,
+    meter: options.meter,
     onRun: (run) => {
       const row = options.ledger.recordRun(run);
       options.onRecorded?.(row);

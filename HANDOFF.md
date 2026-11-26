@@ -1,34 +1,35 @@
 # HANDOFF
 
-Pass of 2026-11-26 (fourth). Verifier: exit 1 -> 0, cases 38/41 -> 40/41 (G-039 skipped, 0 fail).
+Pass of 2026-11-26 (fifth). Verifier: exit 1 -> 0, cases 37/47 -> 46/47 (G-039 skipped, 0 fail). `npm test`: 65 pass.
 
 ## What changed
 
-Two error wordings. The criteria state them since commit 2fff9a6, after the first held-out run.
+The nine cases of commit 0e5c90b (the review findings).
 
-- `mittens_gate/src/writes.ts` (GATE-003, G-040): a kind outside the map now gives `Plan refused: write kind '<kind>' is not allowed`. Before: `'<kind>' is not a write kind`.
-- `mittens_sandbox/src/sandbox.ts` (SBX-004, G-041): a non-positive number now gives `createSandbox: '<key>' must be a positive number`. Before, the text had the word `option` in front of the key.
-- `mittens_gate/test/define.test.ts`: the unit test expects the new refusal.
-
-No behaviour changed: the same inputs are refused, with the same error types.
-
-## Fixed
-
-G-040, G-041.
+- GATE-003, approval order (G-028, G-030, G-031, G-040): `createAgentTools` in `mittens_gate/src/tools.ts` gives the model a copy of the approval tool. Its `needsApproval` runs `validatePlan`: a valid plan asks the human, a refused plan asks nobody and fails in `execute` with the same refusal. The tool of `defineWrites` still carries `needsApproval: true` (GATE-006). `testing.ts` reports `approval_asked` from the chat store.
+- GATE-003, empty plan (G-042): `checkPlan` refuses a plan with no writes.
+- ATK-003 (G-043, G-044): each attack program returns `escaped: true` when its forbidden action succeeded. The suite reports a breach for that, and for the canary in base64 at any of the three alignments.
+- SBX-004 (G-046): a limit below its minimum throws. Before, `Math.max` raised it silently.
+- APP-003 (G-047): new `services/gate-meter.ts`. `GitHubGate` reports each read to the agent over RPC (`CoderAgent.countGateCall`), and the executor takes the count and the first call time from that meter.
 
 ## Still fails
 
 None. G-039 (live model) is skipped by the verifier.
 
+## A human should decide
+
+- `CoderAgent.countGateCall` is a new public method. Durable Object RPC needs it public. It is not `@callable`, so a browser cannot reach it. A module-level counter needs no public member, but it is wrong when the gate and the agent run in different isolates.
+- Each read now costs one more RPC (gate to agent). A read whose count fails does not run.
+- The runaway attacks are finite now, so they can report an escape: 100,000,000 loop turns or calls (50 times the default tick budget), and a 60 s wait for "never-resolving promise". Against an executor with no limits the suite takes long but ends. A sandbox built with a budget above 100,000,000 gets a false breach.
+- The model's tool has a function for `needsApproval`. Safety depends on one fact: `needsApproval` and `execute` call the same `validatePlan`.
+
 ## Suspicions and notes
 
-- Wordings that no criterion states are still a held-out risk. Examples in `createSandbox`: `option '<key>' is required` and `options must be an object`. In the gate: the refusals for 26 writes and a long comment pass G-030 to G-032, the other `PlanRefusal` texts (bad plan shape, bad write input) are not pinned.
-- `createSandbox` has two styles now: `unknown option '<key>'` and `option '<key>' is required` keep the word `option`, the positive number error does not. The criterion asks for this.
-- `deniedAsResponded` depends on SDK internals. A change of `ai` or `agents` can break it. G-029 catches that.
-- The seam is a module-level map in production code. No path sets a replacement outside `testing.ts`.
-- `runScriptedCase` answers one approval per turn. A script with two `apply_writes` steps leaves the second one pending.
-- `refusal` comes after the human approved. A check before the approval request is better for the human.
-- Still open from earlier passes: no sandbox logs, the limit floors, the weak attack judgement, an empty plan is valid, the comment limit applies to any write with a `body`.
-- The fence hook refuses a shell command that names a fenced path, also for a read. Use the file tools.
-- `npm test` prints "uncaught exception" for the rejected direct write and the bad read input. Both are expected: 42 tests pass.
-- Next: the reviewer agent on the diff, then the held-out run again. A human starts both.
+- The base64 check does not cover the URL-safe alphabet, hex, or a canary split over two strings.
+- `escaped: true` is read at the top level of `result` only.
+- `execute` of `mittens_sandbox` still counts in the isolate: `createSandbox` has no host entrypoint of its own. Only the ledger uses the host count. A gate handle with no `scope` (the tests in `test/support.ts`) is not metered.
+- The meter is per agent, one turn at a time. A call from an older gate handle is ignored by its run id.
+- A program can catch the budget error and return a result. It then ends with `error: null`. No attack covers this.
+- Unpinned wordings remain a held-out risk: `option '<key>' is required`, `options must be an object`, the other `PlanRefusal` texts.
+- The fence hook refused one shell read of `verify/runner/adapter.ts` in this pass. Nothing fenced was changed (verifier exit 0, not 3). Use the file tools for fenced paths.
+- Next: the reviewer agent on the diff, then the held-out run. A human starts both.

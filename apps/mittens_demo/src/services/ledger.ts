@@ -7,9 +7,9 @@
  *   +----+------------+--------------+-------------+------------------+-------------+-----------+------------+-------+
  *   plus program (the code that ran) and result_json (truncated).
  *
- *   facade_calls      RPC calls the program made to the gate (counted in the sandbox shim)
+ *   facade_calls      RPC calls the program made to the gate (counted on the host, services/gate-meter.ts)
  *   round_trips       model calls that produced this program: always 1, one program per model turn
- *   isolate_start_ms  LOADER.load() to the first facade call
+ *   isolate_start_ms  the start of the run to the first facade call
  *   tokens_in/out     from the AI SDK step usage, attached after the step ends (null until then)
  */
 import type { SandboxOutcome } from "mittens_sandbox";

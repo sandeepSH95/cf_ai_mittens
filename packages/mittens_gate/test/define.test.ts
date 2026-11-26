@@ -106,6 +106,10 @@ describe("defineWrites", () => {
     expect(() => writes([]).validatePlan(plan)).toThrow("Plan refused: 3 writes, the limit is 2");
   });
 
+  it("refuses a plan with no writes", () => {
+    expect(() => writes([]).validatePlan({ writes: [] })).toThrow("Plan refused: a plan needs at least 1 write");
+  });
+
   it("refuses a comment over the length limit", () => {
     const plan = { writes: [{ kind: "comment", number: 1, body: "x".repeat(MAX_COMMENT_LENGTH + 1) }] };
 

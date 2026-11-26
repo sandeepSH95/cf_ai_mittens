@@ -14,6 +14,7 @@ import { z } from "zod";
 import { issueText } from "./reads";
 
 const REFUSAL_PREFIX = "Plan refused: ";
+const MIN_WRITES = 1;
 const WRITE_KEYS = ["input", "apply"] as const;
 
 const APPLY_TOOL_DESCRIPTION = `Apply a write plan to GitHub. A human must approve this call before anything is written. Pass the plan a program returned.`;
@@ -94,6 +95,11 @@ function checkPlan(kinds: Record<string, WriteEntry>, limits: WriteLimits, input
 
   if (!Array.isArray(writes)) {
     throw new PlanRefusal("a plan is { writes: [...] }");
+  }
+
+  // An empty plan changes nothing, so there is nothing for a human to approve.
+  if (writes.length < MIN_WRITES) {
+    throw new PlanRefusal(`a plan needs at least ${MIN_WRITES} write`);
   }
 
   if (writes.length > limits.maxWrites) {

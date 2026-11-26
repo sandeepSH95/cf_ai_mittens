@@ -5,13 +5,19 @@
  *                 Input { code }, runs ONE program against `github.*`, returns its result.
  *   apply_writes  the applyWritesTool of defineWrites: needsApproval: true. It validates
  *                 a plan and applies it host-side only after a human approved the call.
+ *
+ * A plan is validated before the human is asked:
+ *
+ *   apply_writes({ plan }) --> validatePlan(plan)
+ *                                | passes  --> ask the human --> approved --> execute: validate again, apply
+ *                                | refused --> no question   --> execute: validate again, throw the refusal
  */
 import type { Executor } from "@cloudflare/codemode";
 import { createCodeTool } from "@cloudflare/codemode/ai";
-import type { ToolSet } from "ai";
+import type { Tool, ToolSet } from "ai";
 import { SANDBOX_NAMESPACE } from "mittens_sandbox";
 import { EXAMPLE_PROGRAM, facadeDescriptors } from "./facade";
-import type { Writes } from "./writes";
+import type { ApplyOutcome, Writes } from "./writes";
 
 export const ToolName = { Code: "code", ApplyWrites: "apply_writes" } as const;
 export type ToolName = (typeof ToolName)[keyof typeof ToolName];
@@ -41,7 +47,28 @@ ${EXAMPLE_PROGRAM}`;
 }
 
 /** `reads` and `writes` are what defineReads and defineWrites returned. */
-export type AgentToolOptions = { executor: Executor; reads: { spec: () => string }; writes: Pick<Writes, "planSpec" | "applyWritesTool"> };
+export type AgentToolOptions = { executor: Executor; reads: { spec: () => string }; writes: Writes };
+
+/**
+ * The approval tool as the model gets it. A human is asked for every plan
+ * that passes validatePlan. A plan it refuses must not reach the human, so
+ * that call goes on without a question: execute validates the plan again
+ * and throws the same refusal before any write.
+ * Example: a plan of 26 writes fails with "Plan refused: 26 writes, the limit is 25" and no approval request.
+ */
+function askForValidPlans(writes: Writes): Tool<{ plan: unknown }, ApplyOutcome> {
+  const needsApproval = ({ plan }: { plan: unknown }): boolean => {
+    try {
+      writes.validatePlan(plan);
+    } catch {
+      return false;
+    }
+
+    return true;
+  };
+
+  return { ...writes.applyWritesTool, needsApproval };
+}
 
 export function createAgentTools(options: AgentToolOptions): ToolSet {
   const code = createCodeTool({
@@ -50,5 +77,5 @@ export function createAgentTools(options: AgentToolOptions): ToolSet {
     description: codeDescription(options.writes.planSpec())
   });
 
-  return { [ToolName.Code]: code, [ToolName.ApplyWrites]: options.writes.applyWritesTool };
+  return { [ToolName.Code]: code, [ToolName.ApplyWrites]: askForValidPlans(options.writes) };
 }

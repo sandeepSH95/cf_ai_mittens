@@ -8,7 +8,7 @@
  */
 import { env } from "cloudflare:test";
 import { ATTACK_PROGRAMS, attackSandbox, CANARY_GITHUB_TOKEN } from "mittens_attack";
-import { BUDGET_ERROR_MESSAGE, GATE_BINDING, TIMEOUT_ERROR_MESSAGE } from "mittens_sandbox";
+import { BUDGET_ERROR_MESSAGE, createSandbox, GATE_BINDING, TIMEOUT_ERROR_MESSAGE } from "mittens_sandbox";
 import { describe, expect, it } from "vitest";
 import type { ProgramRun } from "../src/services/ledger";
 import { openGate } from "../src/testing";
@@ -29,6 +29,21 @@ function attack(name: string): Promise<ProgramRun> {
   }
 
   return runProgram(program.code, SMALL_LIMITS);
+}
+
+/**
+ * An executor with a network and no gate: it answers fetch with 200 and runs
+ * the two fetch attacks as they are. Every other attack gets an inert answer.
+ */
+async function runUnguarded(program: string): Promise<{ result: unknown; error: string | null }> {
+  if (!program.includes("fetch(")) {
+    return { result: null, error: null };
+  }
+
+  const fetchOk = async () => new Response("ok");
+  const run = new Function("fetch", `return (${program})();`) as (fetch: unknown) => Promise<unknown>;
+
+  return { result: await run(fetchOk), error: null };
 }
 
 describe("SBX-001 generated code cannot reach the network", () => {
@@ -139,5 +154,40 @@ describe("ATK-003 the suite judges by the canary", () => {
 
     expect(inLog.breached).toBe(ATTACK_PROGRAMS.length);
     expect(inThrow.breached).toBe(ATTACK_PROGRAMS.length);
+  });
+
+  it("reports a breach when the canary comes back in base64, alone or inside a longer text", async () => {
+    for (const lead of ["", "x", "xx"]) {
+      const encoded = btoa(`${lead}${CANARY_GITHUB_TOKEN} and more`);
+      const report = await attackSandbox({ execute: async () => ({ result: { blob: encoded }, error: null }), canary: CANARY_GITHUB_TOKEN });
+
+      expect(report.breached).toBe(ATTACK_PROGRAMS.length);
+    }
+  });
+
+  it("reports a breach when a program says that it escaped, and none for another result", async () => {
+    const escaped = await attackSandbox({ execute: async () => ({ result: { escaped: true }, error: null }), canary: CANARY_GITHUB_TOKEN });
+    const quiet = await attackSandbox({ execute: async () => ({ result: { escaped: false }, error: null }), canary: CANARY_GITHUB_TOKEN });
+
+    expect(escaped.breached).toBe(ATTACK_PROGRAMS.length);
+    expect(quiet.breached).toBe(0);
+  });
+
+  it("reports the attacks that got through an executor with no network block and no limits", async () => {
+    const report = await attackSandbox({ execute: runUnguarded, canary: CANARY_GITHUB_TOKEN });
+    const breached = report.cases.filter((attackCase) => attackCase.outcome === "breached").map((attackCase) => attackCase.name);
+
+    expect(breached).toEqual(["network fetch", "swallowed fetch"]);
+  });
+});
+
+describe("SBX-004 a limit below its minimum is refused", () => {
+  it("throws for each limit and does not raise the value", () => {
+    const options = { loader: env.LOADER, gate: openGate() };
+
+    expect(() => createSandbox({ ...options, tickBudget: 999 })).toThrow("createSandbox: 'tickBudget' must be at least 1000");
+    expect(() => createSandbox({ ...options, timeoutMs: 499 })).toThrow("createSandbox: 'timeoutMs' must be at least 500");
+    expect(() => createSandbox({ ...options, cpuMs: 9 })).toThrow("createSandbox: 'cpuMs' must be at least 10");
+    expect(() => createSandbox({ ...options, tickBudget: 1000, timeoutMs: 500, cpuMs: 10 })).not.toThrow();
   });
 });

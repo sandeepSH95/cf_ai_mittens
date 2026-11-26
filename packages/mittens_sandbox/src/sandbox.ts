@@ -34,10 +34,6 @@ export const DEFAULT_CPU_MS = 100;
 export const DEFAULT_TICK_BUDGET = 2_000_000;
 /** Extra time the host waits past the sandbox's own timer before giving up. */
 const HOST_GRACE_MS = 2_000;
-/** Lower bounds so a caller cannot disable the protections. */
-const MIN_TIMEOUT_MS = 500;
-const MIN_CPU_MS = 10;
-const MIN_TICK_BUDGET = 1_000;
 
 export const SandboxStop = { Budget: "budget", Timeout: "timeout" } as const;
 export const BUDGET_ERROR_MESSAGE = "Program stopped: iteration budget exceeded (runaway loop or recursion)";
@@ -70,6 +66,8 @@ const SandboxOption = { Loader: "loader", Gate: "gate", TickBudget: "tickBudget"
 const REQUIRED_OPTIONS: readonly string[] = [SandboxOption.Loader, SandboxOption.Gate];
 const NUMBER_OPTIONS: readonly string[] = [SandboxOption.TickBudget, SandboxOption.TimeoutMs, SandboxOption.CpuMs];
 const KNOWN_OPTIONS: readonly string[] = [...REQUIRED_OPTIONS, ...NUMBER_OPTIONS];
+/** Lower bounds so a caller cannot disable the protections. A lower value is refused, not raised. */
+const MINIMUMS: Readonly<Record<string, number>> = { [SandboxOption.TickBudget]: 1_000, [SandboxOption.TimeoutMs]: 500, [SandboxOption.CpuMs]: 10 };
 const ERROR_PREFIX = "createSandbox:";
 
 type Limits = { tickBudget: number; timeoutMs: number; cpuMs: number };
@@ -145,7 +143,7 @@ function programModule(instrumented: string): string {
 /**
  * Builds the sandbox. The returned object has one own key, `execute`.
  * Throws a TypeError on an unknown option, a missing loader or gate, or a
- * limit that is not a positive number.
+ * limit that is not a positive number or is below its minimum.
  * Example: createSandbox({ loader: env.LOADER, gate, tickBudget: 10_000 }).
  */
 export function createSandbox(options: SandboxOptions): Sandbox {
@@ -181,12 +179,17 @@ function checkOptions(options: SandboxOptions): Limits {
     if (value !== undefined && !(typeof value === "number" && Number.isFinite(value) && value > 0)) {
       throw new TypeError(`${ERROR_PREFIX} '${key}' must be a positive number`);
     }
+
+    // Example: tickBudget 10 throws "createSandbox: 'tickBudget' must be at least 1000".
+    if (value !== undefined && value < MINIMUMS[key]) {
+      throw new TypeError(`${ERROR_PREFIX} '${key}' must be at least ${MINIMUMS[key]}`);
+    }
   }
 
   return {
-    tickBudget: Math.max(MIN_TICK_BUDGET, options.tickBudget ?? DEFAULT_TICK_BUDGET),
-    timeoutMs: Math.max(MIN_TIMEOUT_MS, options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-    cpuMs: Math.max(MIN_CPU_MS, options.cpuMs ?? DEFAULT_CPU_MS)
+    tickBudget: options.tickBudget ?? DEFAULT_TICK_BUDGET,
+    timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    cpuMs: options.cpuMs ?? DEFAULT_CPU_MS
   };
 }
 

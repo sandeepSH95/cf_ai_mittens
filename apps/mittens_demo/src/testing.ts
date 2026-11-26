@@ -17,7 +17,7 @@
  *     |  AgentClient: user message --> [approval answer] --> messages, ledger, state
  *     v
  *   report: each value is read from what the agent path left behind
- *     chat messages (code and apply_writes tool parts)  program_result, plan, apply_outcome, refusal
+ *     chat messages (code and apply_writes tool parts)  program_result, plan, apply_outcome, refusal, approval_asked
  *     ledger route                                      ledger, agent_state
  *     the stub                                          stub_writes, driver_calls
  *     the scripted model's last prompt                  model_received
@@ -79,6 +79,7 @@ export type ScriptedReport = {
   apply_outcome: { applied: number; failed: number } | null;
   stub_writes: readonly StubWrite[];
   refusal: string | null;
+  approval_asked: boolean;
   model_received: string | null;
   driver_calls: number;
   agent_state: { last_program: string | null; last_ledger: ReportLedger | null; runs: number };
@@ -104,40 +105,42 @@ export async function runScriptedCase(input: ScriptedCase): Promise<ScriptedRepo
   const client = await AgentClient.connect(worker, input.agentName);
 
   try {
-    await playTurn(client, input);
+    const approvalAsked = await playTurn(client, input);
 
     const messages = await client.messages();
     const ledgerRoute = (await client.ledger()) as LedgerRoute;
 
-    return buildReport({ messages, ledgerRoute, github, model });
+    return buildReport({ messages, ledgerRoute, github, model, approvalAsked });
   } finally {
     client.close();
     restoreDrivers(input.agentName);
   }
 }
 
-/** Sends the user message. When apply_writes then waits for the human, gives the answer of the case. */
-async function playTurn(client: AgentClient, input: ScriptedCase): Promise<void> {
+/**
+ * Sends the user message. When apply_writes then waits for the human, gives the answer of the case.
+ * Returns true when apply_writes asked the human, with or without an answer in the case.
+ */
+async function playTurn(client: AgentClient, input: ScriptedCase): Promise<boolean> {
   if (input.userMessage === null) {
-    return;
+    return false;
   }
 
   await client.say(input.userMessage);
 
-  if (input.approval === null) {
-    return;
-  }
-
+  // The chat store shows the question before any answer exists.
   const pending = lastToolPart(await client.messages(), ToolName.ApplyWrites);
+  const asked = pending?.state === PartState.ApprovalRequested;
 
-  if (pending?.state !== PartState.ApprovalRequested || pending.toolCallId === undefined) {
-    return;
+  if (!asked || input.approval === null || pending.toolCallId === undefined) {
+    return asked;
   }
 
   await client.answer(pending.toolCallId, input.approval === Approval.Approve);
+  return asked;
 }
 
-type ReportSources = { messages: ChatMessage[]; ledgerRoute: LedgerRoute; github: StubGitHubDriver; model: ScriptedModelDriver };
+type ReportSources = { messages: ChatMessage[]; ledgerRoute: LedgerRoute; github: StubGitHubDriver; model: ScriptedModelDriver; approvalAsked: boolean };
 
 function buildReport(sources: ReportSources): ScriptedReport {
   const { state, ledger } = sources.ledgerRoute;
@@ -153,6 +156,7 @@ function buildReport(sources: ReportSources): ScriptedReport {
     apply_outcome: applyOutcomeOf(applyPart),
     stub_writes: sources.github.receivedWrites(),
     refusal: applyPart?.state === PartState.OutputError ? (applyPart.errorText ?? null) : null,
+    approval_asked: sources.approvalAsked,
     model_received: sources.model.lastOutputType(ToolName.ApplyWrites),
     driver_calls: sources.github.readCalls(),
     agent_state: { last_program: state.lastProgram, last_ledger: reportLedger(state.lastLedger), runs: state.runs }

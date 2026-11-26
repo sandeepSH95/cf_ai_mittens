@@ -27,16 +27,21 @@ const EXECUTION_DENIED = "execution-denied";
 /** The code tool is not exercised here. */
 const NO_EXECUTOR: Executor = { execute: async () => ({ result: undefined, error: "not used in this test" }) };
 
+const TOOL_ERROR = "tool-error";
+const EMPTY_PLAN = { writes: [] };
+const EMPTY_REFUSAL = "Plan refused: a plan needs at least 1 write";
+
 function setup() {
   const driver = new StubGitHubDriver();
-  const tools = createAgentTools({ executor: NO_EXECUTOR, reads: githubReads(driver, REPO), writes: githubWrites(driver, REPO) });
-  return { driver, tools };
+  const writes = githubWrites(driver, REPO);
+  const tools = createAgentTools({ executor: NO_EXECUTOR, reads: githubReads(driver, REPO), writes });
+  return { driver, tools, writes };
 }
 
 /** First turn: the model asks to apply the plan; the SDK must stop and ask a human. */
-async function requestApproval(tools: ReturnType<typeof setup>["tools"]) {
+async function requestApproval(tools: ReturnType<typeof setup>["tools"], plan: unknown = PLAN) {
   const result = streamText({
-    model: scriptedModel([{ toolCall: { name: ToolName.ApplyWrites, input: { plan: PLAN } } }, { text: "done" }]),
+    model: scriptedModel([{ toolCall: { name: ToolName.ApplyWrites, input: { plan } } }, { text: "done" }]),
     tools,
     messages: [USER_MESSAGE],
     stopWhen: stepCountIs(MAX_STEPS)
@@ -86,8 +91,18 @@ function applyOutcomeInPrompt(prompt: readonly PromptMessage[]): ApplyOutcome | 
 
 describe("KCM-003 writes require human approval", () => {
   it("apply_writes carries needsApproval: true", () => {
-    const { tools } = setup();
-    expect(tools[ToolName.ApplyWrites].needsApproval).toBe(true);
+    const { writes } = setup();
+    expect(writes.applyWritesTool.needsApproval).toBe(true);
+  });
+
+  it("a plan the validation refuses asks nobody and fails with the refusal", async () => {
+    const { driver, tools } = setup();
+    const { steps, requests } = await requestApproval(tools, EMPTY_PLAN);
+    const errors = steps.flatMap((step) => step.content).filter((part) => part.type === TOOL_ERROR);
+
+    expect(requests).toHaveLength(0);
+    expect(errors.map((part) => (part as { error: Error }).error.message)).toEqual([EMPTY_REFUSAL]);
+    expect(driver.writes()).toHaveLength(0);
   });
 
   it("a call without approval stops the turn and executes nothing", async () => {

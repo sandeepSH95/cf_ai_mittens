@@ -26,6 +26,7 @@ import { wrapAISDK } from "agents/observability/ai";
 import * as ai from "ai";
 import { convertToModelMessages, stepCountIs, type StepResult, type ToolSet } from "ai";
 import { deniedAsResponded } from "./services/denial";
+import { GateMeter } from "./services/gate-meter";
 import { Ledger, type LedgerRow } from "./services/ledger";
 import { prepareTurn } from "./services/turn";
 
@@ -49,6 +50,8 @@ type ChatOptions = Parameters<AIChatAgent<Env, CoderState>["onChatMessage"]>[1];
 export class CoderAgent extends AIChatAgent<Env, CoderState> {
   initialState: CoderState = { lastProgram: null, lastLedger: null, runs: 0, modelId: null };
   #ledger: Ledger | undefined;
+  // Counts the gate calls of the turn in progress. GitHubGate reports each call.
+  #meter: GateMeter | undefined;
 
   async onChatMessage(_onFinish: ai.GenerateTextOnFinishCallback<ToolSet>, options?: ChatOptions): Promise<Response> {
     const runId = options?.requestId ?? crypto.randomUUID();
@@ -57,9 +60,13 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
     // Ledger rows written during the current step; usage is attached when the step ends.
     const recorded: number[] = [];
 
+    const meter = new GateMeter(runId);
+    this.#meter = meter;
+
     const turn = prepareTurn(this.env, {
       gate: this.ctx.exports.GitHubGate({ props: { runId, scope: this.name } }),
       ledger,
+      meter,
       scope: this.name,
       onRecorded: (row) => {
         recorded.push(row.id);
@@ -81,6 +88,11 @@ export class CoderAgent extends AIChatAgent<Env, CoderState> {
 
     // The default text is "An error occurred.". The human must read why a plan was refused or a program failed.
     return result.toUIMessageStreamResponse({ onError: errorText });
+  }
+
+  /** Called by GitHubGate over RPC, once per read, so the count is made on the host. Example: countGateCall("r-1"). */
+  countGateCall(runId: string): void {
+    this.#meter?.count(runId);
   }
 
   /** GET .../ledger returns the state and the last ledger rows. Other paths fall through. */
