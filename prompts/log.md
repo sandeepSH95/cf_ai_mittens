@@ -212,3 +212,7 @@ Release setps, we will get to
 ## 2026-11-26T16:32:25Z, session dfdda72e, HEAD 2ddc715
 
 logged in proceed with live checks
+
+## 2026-11-26T17:15:00Z, session dfdda72e, HEAD 12ce184
+
+An open live model on a public URL is not acceptable. The demo should not be live, but it shoudl be buildable by anyone who has access to the repo to deploy themselves

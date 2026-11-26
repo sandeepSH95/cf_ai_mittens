@@ -254,6 +254,8 @@ Report: the routes; the README outline; what the human must record (the 30 secon
 
 Human only. Write `PROMPTS.md` from `prompts/log.md`. Tag, let CI publish the packages with provenance. Deploy on Workers Paid, put the URL at the top of the README, add Cloudflare Access in front of the chat route.
 
+What happened: no public deployment. On 26 November 2026 the human decided that an open live model on a public URL is not acceptable. The README shows how a reader runs the demo from a clone and deploys it to their own account. No packages were published.
+
 ## 7. Criteria scheme
 
 - Prefixes: `SBX` sandbox, `GATE` gate, `ATK` attack, `APP` demo, `HARN` harness. Three digits. IDs never change meaning; a retired ID is marked retired, not reused.

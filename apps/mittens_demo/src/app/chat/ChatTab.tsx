@@ -52,7 +52,7 @@ export function ChatTab() {
           </CardTitle>
           <CardDescription>
             By default the demo runs with stub drivers: a scripted stub model and a fixture repository. No account needed.
-            {/* The deployed demo uses a live model, so the page names the model that wrote the last program. */}
+            {/* A run with a live model is possible (MODEL_DRIVER), so the page names the model that wrote the last program. */}
             {modelId ? ` Model of the last run: ${modelId}.` : null}
           </CardDescription>
 
