@@ -145,3 +145,7 @@ Pass complete, please verify
 ## 2026-11-26T14:19:41Z, session dfdda72e, HEAD b33b23c
 
 The extra RPC is acceptable for our first version. Log the sanbox issue for future investigation.
+
+## 2026-11-26T14:22:10Z, session dfdda72e, HEAD 1722757
+
+provide details of the contGateCall decision
