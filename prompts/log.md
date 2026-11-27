@@ -221,3 +221,7 @@ An open live model on a public URL is not acceptable. The demo should not be liv
 
 Please populat eth ereadme. The framing of this project is:
 An experiment in containing prompt injection by running model-written code in a Cloudflare isolate that holds no secret and has no write path, built by an agent loop that a fixed gold set judges.
+
+## 2026-11-27T11:43:17Z, session dfdda72e, HEAD 23ff940
+
+remove the readme section "There is no public demo. Run it from a clone." This information is a given and would not be expected by anyone

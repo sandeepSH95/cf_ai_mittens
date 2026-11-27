@@ -193,37 +193,11 @@ Drivers are chosen by variables, and both default to stubs:
 | The verifier | `sh verify/run.sh` |
 | Self-tests of the verifier, the loop and the hooks | `npm run test:verify` |
 | Redraw the chart (the points come from the ledger, the three notes from the script) | `node tools/ledger-chart.mjs` |
+| The demo with a live model (needs `npx wrangler login`) | `cd apps/mittens_demo && npx wrangler dev --var MODEL_DRIVER:workers-ai` |
 | The live-model check (G-039), against a running demo | `node tools/live-check.mjs <base-url>` |
+| A deployment to your own account, run by a human | `cd apps/mittens_demo && npx wrangler deploy --var MODEL_DRIVER:workers-ai` |
 
 Node 24 or later is required: the verifier runs TypeScript directly.
-
-### There is no public demo. Run it from a clone.
-
-This project is not hosted, on purpose. A public URL with a live model lets any visitor spend the owner's Workers AI allowance, and the demo has no rate limit. Everything runs from a clone, and the configuration names no account, so you can deploy it to your own.
-
-| You want | You need | Commands |
-| --- | --- | --- |
-| The attack page and the chat, offline | Node 24 | The three commands at the top of this file |
-| The chat with a live model, on your machine | A Cloudflare account | See "Live model, local" below |
-| Your own deployment | A Cloudflare account with Dynamic Workers (the `worker_loaders` binding) | See "Your own deployment" below |
-
-Live model, local. Only the model call leaves your machine. The repository stays the stub.
-
-```bash
-npx wrangler login
-npm run build -w apps/mittens_demo
-cd apps/mittens_demo && npx wrangler dev --var MODEL_DRIVER:workers-ai
-```
-
-Your own deployment. A human runs these: a hook refuses them to every agent session.
-
-```bash
-npx wrangler login
-npm run build -w apps/mittens_demo
-cd apps/mittens_demo && npx wrangler deploy --var MODEL_DRIVER:workers-ai
-```
-
-The flag selects the live model. Without it the deployed Worker uses the stub model and costs nothing per message. The repository driver stays the stub in both cases, so the Worker holds no GitHub token. If you deploy with the live model, put the URL behind Cloudflare Access or another login.
 
 ## Where to look
 
