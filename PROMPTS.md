@@ -158,6 +158,23 @@ The author then used the page and found that it misled:
 
 **[exact]**, 26 November. The page showed a breach in the naive executor with no word that the breach was the intended result. Each card now states its expected result before the run and says after the run if the report matches.
 
+## Phase 7: the live model, and the frame
+
+> logged in proceed with live checks
+
+**[exact]**, 26 November. The first run against a live model: a program ran in 2 of 5 runs, and no plan reached the human. Two fixes later the check gave 5 of 5. The table of errors below has the detail.
+
+> An open live model on a public URL is not acceptable. The demo should not be live, but it shoudl be buildable by anyone who has access to the repo to deploy themselves
+
+**[exact]**, 26 November. Result: no public deployment. The README shows how to run the project from a clone and how to deploy it to the reader's own account.
+
+> Please populat eth ereadme. The framing of this project is:
+> An experiment in containing prompt injection by running model-written code in a Cloudflare isolate that holds no secret and has no write path, built by an agent loop that a fixed gold set judges.
+
+**[exact]**, 26 November. Result: the README opens with that sentence, states the question, and has a section on what the experiment does not show.
+
+Two read-only reviews ran before publication, a cold read of the documents and a code review. Their findings are fixed, or logged in [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) and [docs/TODO.md](docs/TODO.md). The prompts of that work are not published.
+
 ## The briefs given to subagents
 
 The coordinating agent gave six pieces of work to subagents. Each brief is in the repository, and each result was checked by the coordinator before it was committed.

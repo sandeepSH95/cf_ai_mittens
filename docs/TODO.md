@@ -6,7 +6,6 @@ Work that is not done. Faults in what exists are in [KNOWN_ISSUES.md](KNOWN_ISSU
 
 | Item | State |
 | --- | --- |
-| The CI workflow (`.github/workflows/ci.yml`) | Written and read, never run. It was tested on macOS only, by hand, step by step. The first run on a Linux runner may need a fix. |
 | A deployment | The commands are in the README. Nobody has run them for this project. Dynamic Workers must be available on the account. |
 | The live-model check on a second model | Three checks ran, all on `@cf/openai/gpt-oss-120b` with one request. The system prompt is tuned to that model. |
 | The failure paths of `tools/live-check.mjs` | Each predicate was seen to pass and, in the first live check, two were seen to fail. `reads_only` and `no_breach` were never seen to fail. |
